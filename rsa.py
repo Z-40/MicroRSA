@@ -1,0 +1,276 @@
+import pem
+import math
+import common
+import random
+import hashlib
+import padding
+import blinding
+import warnings
+import exceptions
+import rabin_miller
+
+
+class AbstractKey:
+    """
+    Base class for RSA public and private keys
+    :param p: A large prime number.
+    :param q: A large prime number
+    """
+    def __init__(self, p: int, q: int) -> None:
+        self.p = p
+        self.q = q
+        self.n = self.p * self.q
+        self.phi = (self.p - 1) * (self.q - 1)
+
+    def generate(self, directory, file) -> tuple:
+        """
+        Generates an RSA public or private key
+        :param directory: Location of file
+        :param file: File name
+        :return: key data
+        """
+
+
+class PublicKey(AbstractKey):
+    """
+    RSA public key class
+    :param p: A large prime number
+    :param q: A large prime number
+    """
+    def __init__(self, p, q) -> None:
+        super().__init__(p, q)
+        self.p = p
+        self.q = q
+        self.n = self.p * self.q
+        self.phi = (self.p - 1) * (self.q - 1)
+
+        # the default value for E is always set to 65537
+        self.e = 65537  
+
+        # if the modulus is less than 65537, we calculate E such that 
+        # E and phi are relatively prime
+        if self.n < 65537:
+            while True:
+                e = random.randint(2, self.phi)
+                if math.gcd(e, self.phi) == 1:
+                    self.e = e
+        
+    def generate(self, directory=None, file="PUBLIC_KEY.pem") -> tuple:
+        """
+        Generates a RSA public key containing a tuple (n, e)
+        where e is the public exponent and n is the modulus.
+        :param directory: File path
+        :param file: File name
+        :return: key data
+        """
+        pem.save_pem_pub(n=self.n, e=self.e, path=directory, file=file)
+        return self.n, self.e
+        
+
+class PrivateKey(AbstractKey):
+    """
+    RSA private key class
+    :param p: A large prime number
+    :param q: A large prime number
+    :param e: Public exponent
+    """
+    def __init__(self, p, q, e) -> None:
+        super().__init__(p, q)
+        self.e = e
+        self.p = p
+        self.q = q
+        self.n = self.p * self.q
+        self.phi = (self.p - 1) * (self.q - 1)
+        self.d = common.modular_inv(self.e, self.phi)
+        self.dp = self.d % (self.p - 1)
+        self.dq = self.d % (self.q - 1)
+        self.qinv = common.modular_inv(self.q, self.p)
+
+    def generate(self, directory, file="PRIVATE_KEY.pem") -> tuple:
+        """
+        Generates a RSA private key.
+        :param directory: File path
+        :param file: File name
+        :return: key data
+        """
+        pem.save_pem_priv(
+            n=self.n, e=self.e, 
+            d=self.d, p=self.p,
+            q=self.q, dp=self.dp, 
+            dq=self.dq, qInv=self.qinv,
+            path=directory, file=file
+        )
+        
+        return (
+            self.n, self.e, self.d, self.p,
+            self.q, self.dp, self.dq, self.qinv
+        )
+
+
+def newkeys(strength: int, path: str) -> tuple:
+    """
+    Generates a new rsa keys which have a modulus of ``strength``
+    bits in length
+    :param strength: key strength
+    :param path: File location
+    :return: Private key data
+    """
+    # warn the user if the strength is less than 1024 bits
+    if strength < 1024:
+        warnings.warn("WARNING: The key strength is too low")
+
+    # raise an exception because a key size less than 256 bits is unacceptable
+    if strength < 256:
+        raise exceptions.KeyGenerationError("The key strength is too low")
+
+    p, q = rabin_miller.get_primes(strength)
+    _, e = PublicKey(p, q).generate(path)
+    data = PrivateKey(p, q, e).generate(path)
+
+    return data
+
+
+def encrypt(message, directory, file="PUBLIC_KEY.pem") -> bytes:
+    """
+    Encrypt a byte string
+    :param message: Byte string containing the plain text message
+    :param directory: Location of the public key
+    :param file: Public key file name
+    :return: A byte string containing the encrypted message
+    """
+
+    # load a pem encoded public key
+    _, n, e = pem.load_pem_pub(path=directory, file=file)
+
+    # find the byte size of modulus
+    nbytes = common.byte_size(n)
+
+    # pad and encrypt the message
+    int_m = common.bytes2int(padding.pad_for_encryption(message, nbytes))
+    encrypted = pow(int_m, e, n)
+    encrypted = common.int2bytes(encrypted, nbytes)
+
+    return encrypted
+
+
+def decrypt(c, directory, blinded=True, mode="decrypt", file="PRIVATE_KEY.pem") -> bytes:
+    """
+    Decrypt a byte string
+    :param c: Byte string containing the cipher text
+    :param directory: Location of the public key
+    :param file: Public key file name
+    :return: A byte string containing the decrypted message
+    """
+    # load the pem encoded private key
+    _, n, e, d, p, q, dp, dq, qinv = pem.load_pem_priv(directory, file)
+
+    nbytes = common.byte_size(n)  
+    int_c = common.bytes2int(c)
+
+    # use the Chinese Remainder Theorem if blinding is turned off
+    if not blinded:
+        m1 = pow(int_c, dp, p)
+        m2 = pow(int_c, dq, q)
+        h = (qinv * (m1 - m2)) % p
+        decrypted = m2 + h * q
+
+    # decrypt using blinding if blinding is turned off
+    elif blinded:
+        decrypted = blinding.blinded_operation(int_c, n, e, d)
+        
+    else:
+        raise exceptions.DecryptionError("Invalid argument {}".format(blinded))
+        
+    # convert the decrypted int to bytes
+    decrypted = common.int2bytes(decrypted, nbytes)    
+
+    # the \x00\x02 bytes must be present
+    if decrypted[0:2] != b"\x00\002":
+        raise exceptions.DecryptionError("Decryption failed because cleartext "
+                                         "markers are not present")
+    
+    # the byte length of the decrypted message must be equal to that of the modulus
+    elif nbytes != len(decrypted):
+        raise exceptions.DecryptionError("Decryption failed because the byte "
+                                         "length of the modulusis not equal to "
+                                         "that of the cipher text")
+    
+    # the \x00 seperator must be present
+    elif b"\x00" not in decrypted:
+        raise exceptions.DecryptionError("Decryption failed because \\x00 "
+                                         "separator not present")
+    
+    return decrypted[decrypted.index(b"\x00", 2) + 1:]
+
+
+def sign(m: bytes, directory: str, hash=hashlib.sha256, file="PRIVATE_KEY.pem") -> bool:
+    """
+    Sign the message using the private key
+    :param m: The message to be signed
+    :param directory: Location of RSA private key
+    :param hash: Hashing algorithm
+    :param file: File name of RSA private key 
+    :return: The signed message
+    """
+    # hash the message
+    mhash = hash(m).hexdigest()
+
+    # read the private key
+    _, n, e, d, p, q, dp, dq, qinv = pem.load_pem_priv(directory, file)
+
+    # find the byte size of n
+    nbytes = common.byte_size(n)
+
+    # pad and encrypt the message
+    padded_m = padding.pad_for_signing(mhash, nbytes)
+    int_m = common.bytes2int(padded_m)
+    encrypted = blinding.blinded_operation(int_m, n, e, d)
+    encrypted = common.int2bytes(encrypted, nbytes)
+
+    return encrypted
+
+
+def verify(s, m, directory, hash=hashlib.sha256, file="PUBLIC_KEY.pem"):
+    """
+    Verify the signature using the public key
+    :param s: The signature
+    :param m: The message
+    :param directory: Location of public key
+    :param hash: Hash algorithm to be used
+    :param file: Name of public key
+    :return: ``True`` if the signature is verified and ``False`` if othervise
+    """
+    _, n, e = pem.load_pem_pub(directory, file)  # load the pem encoded public key
+
+    # decrypt the message
+    nbytes = common.byte_size(n)
+    int_s = common.bytes2int(s)
+    decrypted_s = pow(int_s, e, n)
+    decrypted_s = common.int2bytes(decrypted_s, nbytes)
+
+    # the \x00\x01 bytes must be present
+    if decrypted_s[0:2] != b"\x00\001":
+        raise exceptions.VerificationError("Verification failed because cleartext "
+                                           "markers are not present")
+    
+    # the byte length of the decrypted message must be equal to that of the modulus
+    elif nbytes != len(decrypted_s):
+        raise exceptions.VerificationError("Verification failed because the byte "
+                                           "length of the modulusis not equal to "
+                                           "that of the cipher text")
+    
+    # the \x00 seperator must be present
+    elif b"\x00" not in decrypted_s:
+        raise exceptions.VerificationError("Verification failed because \\x00 "
+                                           "separator not present")
+    
+    # we only read data after the 00 seperator
+    decrypted_s = decrypted_s[decrypted_s.index(b"\x00", 2) + 1:]  
+
+    hashed_m = bytes(hash(m).hexdigest(), "utf-8")  # hash the message
+
+    # compare the decrypted signature and the hash
+    if hashed_m == decrypted_s:
+        return True
+    else:
+        return False
