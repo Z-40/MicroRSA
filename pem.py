@@ -11,7 +11,8 @@
 #  limitations under the License.
 
 """Contains all functions related to reading/writing
-RSA public/private keys"""
+RSA public/private keys using Privacy Enchanced Mail (PEM)
+See https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail for more info"""
 
 import base64
 import pyasn1.type.univ as univ
