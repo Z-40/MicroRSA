@@ -42,7 +42,7 @@ def get_primes(blen: int) -> tuple:
     p = []
     for i in range(2):
         while True:
-            num = random.getrandbits(blen // 2)
+            num = random.getrandbits(blen // 2) | 1
             if miller_rabin(num, 10):
                 p.append(num)
                 break

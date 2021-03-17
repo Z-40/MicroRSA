@@ -1,13 +1,32 @@
-import pem
 import math
-import common
 import random
 import hashlib
-import padding
-import blinding
 import warnings
-import exceptions
-import rabin_miller
+
+from MicroRSA.rabin_miller import get_primes
+
+from MicroRSA.pem import (
+    load_pem_priv, load_pem_pub,
+    save_pem_priv, save_pem_pub
+)
+
+from MicroRSA.common import (
+    byte_size, bytes2int, 
+    modular_inv, int2bytes
+)
+
+from MicroRSA.exceptions import (
+    VerificationError, DecryptionError, 
+    KeyGenerationError
+)
+
+from MicroRSA.padding import (
+    pad_for_encryption, pad_for_signing
+)
+
+from MicroRSA.blinding import (
+    get_blinding_factor, blinded_operation
+)
 
 
 class AbstractKey:
@@ -63,7 +82,7 @@ class PublicKey(AbstractKey):
         :param file: File name
         :return: key data
         """
-        pem.save_pem_pub(n=self.n, e=self.e, path=directory, file=file)
+        save_pem_pub(n=self.n, e=self.e, path=directory, file=file)
         return self.n, self.e
         
 
@@ -81,10 +100,10 @@ class PrivateKey(AbstractKey):
         self.q = q
         self.n = self.p * self.q
         self.phi = (self.p - 1) * (self.q - 1)
-        self.d = common.modular_inv(self.e, self.phi)
+        self.d = modular_inv(self.e, self.phi)
         self.dp = self.d % (self.p - 1)
         self.dq = self.d % (self.q - 1)
-        self.qinv = common.modular_inv(self.q, self.p)
+        self.qinv = modular_inv(self.q, self.p)
 
     def generate(self, directory, file="PRIVATE_KEY.pem") -> tuple:
         """
@@ -93,7 +112,7 @@ class PrivateKey(AbstractKey):
         :param file: File name
         :return: key data
         """
-        pem.save_pem_priv(
+        save_pem_priv(
             n=self.n, e=self.e, 
             d=self.d, p=self.p,
             q=self.q, dp=self.dp, 
@@ -121,9 +140,9 @@ def newkeys(strength: int, path: str) -> tuple:
 
     # raise an exception because a key size less than 256 bits is unacceptable
     if strength < 256:
-        raise exceptions.KeyGenerationError("The key strength is too low")
+        raise KeyGenerationError("The key strength is too low")
 
-    p, q = rabin_miller.get_primes(strength)
+    p, q = get_primes(strength)
     _, e = PublicKey(p, q).generate(path)
     data = PrivateKey(p, q, e).generate(path)
 
@@ -140,15 +159,15 @@ def encrypt(message, directory, file="PUBLIC_KEY.pem") -> bytes:
     """
 
     # load a pem encoded public key
-    _, n, e = pem.load_pem_pub(path=directory, file=file)
+    _, n, e = load_pem_pub(path=directory, file=file)
 
     # find the byte size of modulus
-    nbytes = common.byte_size(n)
+    nbytes = byte_size(n)
 
     # pad and encrypt the message
-    int_m = common.bytes2int(padding.pad_for_encryption(message, nbytes))
+    int_m = bytes2int(pad_for_encryption(message, nbytes))
     encrypted = pow(int_m, e, n)
-    encrypted = common.int2bytes(encrypted, nbytes)
+    encrypted = int2bytes(encrypted, nbytes)
 
     return encrypted
 
@@ -162,10 +181,10 @@ def decrypt(c, directory, blinded=True, mode="decrypt", file="PRIVATE_KEY.pem") 
     :return: A byte string containing the decrypted message
     """
     # load the pem encoded private key
-    _, n, e, d, p, q, dp, dq, qinv = pem.load_pem_priv(directory, file)
+    _, n, e, d, p, q, dp, dq, qinv = load_pem_priv(directory, file)
 
-    nbytes = common.byte_size(n)  
-    int_c = common.bytes2int(c)
+    nbytes = byte_size(n)  
+    int_c = bytes2int(c)
 
     # use the Chinese Remainder Theorem if blinding is turned off
     if not blinded:
@@ -176,29 +195,29 @@ def decrypt(c, directory, blinded=True, mode="decrypt", file="PRIVATE_KEY.pem") 
 
     # decrypt using blinding if blinding is turned off
     elif blinded:
-        decrypted = blinding.blinded_operation(int_c, n, e, d)
+        decrypted = blinded_operation(int_c, n, e, d)
         
     else:
-        raise exceptions.DecryptionError("Invalid argument {}".format(blinded))
+        raise DecryptionError("Invalid argument {}".format(blinded))
         
     # convert the decrypted int to bytes
-    decrypted = common.int2bytes(decrypted, nbytes)    
+    decrypted = int2bytes(decrypted, nbytes)    
 
     # the \x00\x02 bytes must be present
     if decrypted[0:2] != b"\x00\002":
-        raise exceptions.DecryptionError("Decryption failed because cleartext "
-                                         "markers are not present")
+        raise DecryptionError("Decryption failed because cleartext "
+                              "markers are not present")
     
     # the byte length of the decrypted message must be equal to that of the modulus
     elif nbytes != len(decrypted):
-        raise exceptions.DecryptionError("Decryption failed because the byte "
-                                         "length of the modulusis not equal to "
-                                         "that of the cipher text")
+        raise DecryptionError("Decryption failed because the byte "
+                              "length of the modulusis not equal to "
+                              "that of the cipher text")
     
     # the \x00 seperator must be present
     elif b"\x00" not in decrypted:
-        raise exceptions.DecryptionError("Decryption failed because \\x00 "
-                                         "separator not present")
+        raise DecryptionError("Decryption failed because \\x00 "
+                              "separator not present")
     
     return decrypted[decrypted.index(b"\x00", 2) + 1:]
 
@@ -216,16 +235,15 @@ def sign(m: bytes, directory: str, hash=hashlib.sha256, file="PRIVATE_KEY.pem") 
     mhash = hash(m).hexdigest()
 
     # read the private key
-    _, n, e, d, p, q, dp, dq, qinv = pem.load_pem_priv(directory, file)
+    _, n, e, d, p, q, dp, dq, qinv = load_pem_priv(directory, file)
 
     # find the byte size of n
-    nbytes = common.byte_size(n)
+    nbytes = byte_size(n)
 
     # pad and encrypt the message
-    padded_m = padding.pad_for_signing(mhash, nbytes)
-    int_m = common.bytes2int(padded_m)
-    encrypted = blinding.blinded_operation(int_m, n, e, d)
-    encrypted = common.int2bytes(encrypted, nbytes)
+    int_m = bytes2int(pad_for_signing(mhash, nbytes))
+    encrypted = blinded_operation(int_m, n, e, d)
+    encrypted = int2bytes(encrypted, nbytes)
 
     return encrypted
 
@@ -240,29 +258,29 @@ def verify(s, m, directory, hash=hashlib.sha256, file="PUBLIC_KEY.pem"):
     :param file: Name of public key
     :return: ``True`` if the signature is verified and ``False`` if othervise
     """
-    _, n, e = pem.load_pem_pub(directory, file)  # load the pem encoded public key
+    _, n, e = load_pem_pub(directory, file)  # load the pem encoded public key
 
     # decrypt the message
-    nbytes = common.byte_size(n)
-    int_s = common.bytes2int(s)
+    nbytes = byte_size(n)
+    int_s = bytes2int(s)
     decrypted_s = pow(int_s, e, n)
-    decrypted_s = common.int2bytes(decrypted_s, nbytes)
+    decrypted_s = int2bytes(decrypted_s, nbytes)
 
     # the \x00\x01 bytes must be present
     if decrypted_s[0:2] != b"\x00\001":
-        raise exceptions.VerificationError("Verification failed because cleartext "
-                                           "markers are not present")
+        raise VerificationError("Verification failed because cleartext "
+                                "markers are not present")
     
     # the byte length of the decrypted message must be equal to that of the modulus
     elif nbytes != len(decrypted_s):
-        raise exceptions.VerificationError("Verification failed because the byte "
-                                           "length of the modulusis not equal to "
-                                           "that of the cipher text")
+        raise VerificationError("Verification failed because the byte "
+                                "length of the modulusis not equal to "
+                                "that of the cipher text")
     
     # the \x00 seperator must be present
     elif b"\x00" not in decrypted_s:
-        raise exceptions.VerificationError("Verification failed because \\x00 "
-                                           "separator not present")
+        raise VerificationError("Verification failed because \\x00 "
+                                "separator not present")
     
     # we only read data after the 00 seperator
     decrypted_s = decrypted_s[decrypted_s.index(b"\x00", 2) + 1:]  

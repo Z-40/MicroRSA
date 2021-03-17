@@ -1,6 +1,5 @@
 import math
 import random
-import doctest
 
 
 def get_rand_num(maxvalue: int) -> int:

@@ -1,5 +1,5 @@
 import os
-import exceptions
+from MicroRSA.exceptions import PaddingError
 
 
 def pad_for_encryption(m: bytes, dlen: int) -> bytes:
@@ -14,7 +14,7 @@ def pad_for_encryption(m: bytes, dlen: int) -> bytes:
     max_len = dlen - 11
 
     if mlen > max_len:
-        raise exceptions.PaddingError("Message can only fit {} bytes".format(max_len))
+        raise PaddingError("Message can only fit {} bytes".format(max_len))
 
     padding_length = dlen - mlen - 3
     padding = b""
@@ -40,7 +40,7 @@ def pad_for_signing(m: bytes, dlen: int) -> bytes:
     max_len = dlen - 11
 
     if mlen > max_len:
-        raise exceptions.PaddingError("Message can only fit {} bytes".format(max_len))
+        raise PaddingError("Message can only fit {} bytes".format(max_len))
 
     padding_length = dlen - mlen - 3
 

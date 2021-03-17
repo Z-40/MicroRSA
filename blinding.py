@@ -1,4 +1,5 @@
-import common, math
+import math
+from MicroRSA.common import get_rand_num, modular_inv
 
 
 def get_blinding_factor(n):
@@ -8,12 +9,12 @@ def get_blinding_factor(n):
     """
     blindr = None
     while True:
-        r = common.get_rand_num(n - 1)
+        r = get_rand_num(n - 1)
         if math.gcd(r, n) == 1:
             blindr = r
             break
 
-    blindr_inv = common.modular_inv(blindr, n)
+    blindr_inv = modular_inv(blindr, n)
 
     return blindr, blindr_inv
 

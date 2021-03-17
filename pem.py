@@ -1,9 +1,10 @@
 import base64
-import exceptions
 import pyasn1.type.univ as univ
 import pyasn1.type.namedtype as namedtype
 import pyasn1.codec.der.encoder as encoder
 import pyasn1.codec.der.decoder as decoder
+
+from MicroRSA.exceptions import KeyGenerationError, KeyReadError
 
 
 class PubKey(univ.Sequence):
@@ -46,15 +47,9 @@ def save_pem_priv(n, e, d, p, q, dp, dq, qInv, path, file="PRIVATE_KEY.pem"):
     """
     template = "-----BEGIN RSA PRIVATE KEY-----\n{}-----END RSA PRIVATE KEY-----"
     names = (
-        "version",
-        "modulus", 
-        "publicExponent", 
-        "privateExponent", 
-        "prime1", 
-        "prime2", 
-        "exponent1", 
-        "exponent2", 
-        "coefficient"
+        "version", "modulus", "publicExponent", 
+        "privateExponent", "prime1", "prime2", 
+        "exponent1", "exponent2", "coefficient"
     )
     seq = PrivKey()
     for i, x in enumerate((0, n, e, d, p, q, dp, dq, qInv)):
@@ -70,7 +65,7 @@ def save_pem_priv(n, e, d, p, q, dp, dq, qInv, path, file="PRIVATE_KEY.pem"):
             f.write(bytes(final_data, "ascii"))
 
     except:
-        raise exceptions.KeyGenerationError("Could not write file to {}".format(path))
+        raise KeyGenerationError("Could not write file to {}".format(path))
 
 def save_pem_pub(n, e, path, file="PUBLIC_KEY.pem"):
     """
@@ -97,7 +92,7 @@ def save_pem_pub(n, e, path, file="PUBLIC_KEY.pem"):
             f.write(bytes(final_data, "ascii"))
 
     except:
-        raise exceptions.KeyGenerationError("Could not write file to {}".format(path))
+        raise KeyGenerationError("Could not write file to {}".format(path))
 
 
 def load_pem_pub(path, file="PUBLIC_KEY.pem"):
@@ -113,7 +108,7 @@ def load_pem_pub(path, file="PUBLIC_KEY.pem"):
             raw_data = f.read()
 
     except:
-        raise exceptions.KeyReadError("Could not find file at {}".format(path))
+        raise KeyReadError("Could not find file at {}".format(path))
     
     # remove the unwanted data
     data1 = raw_data.replace(b"-----BEGIN RSA PUBLIC KEY-----", b"")
@@ -126,7 +121,7 @@ def load_pem_pub(path, file="PUBLIC_KEY.pem"):
         decoded = decoder.decode(der, asn1Spec=PubKey())[0]
 
     except:
-        raise exceptions.KeyReadError("Could not decode file")
+        raise KeyReadError("Could not decode file")
 
     # get the values from the sequence and add them to the list
     values = []
@@ -143,15 +138,9 @@ def load_pem_priv(path, file="PRIVATE_KEY.pem"):
     :param file: File name
     """
     names = (
-        "version", 
-        "modulus", 
-        "publicExponent", 
-        "privateExponent", 
-        "prime1", 
-        "prime2", 
-        "exponent1", 
-        "exponent2", 
-        "coefficient"
+        "version", "modulus", "publicExponent", 
+        "privateExponent", "prime1", "prime2", 
+        "exponent1", "exponent2", "coefficient"
     )
 
     try:
@@ -159,7 +148,7 @@ def load_pem_priv(path, file="PRIVATE_KEY.pem"):
             raw_data = f.read()
 
     except:
-        raise exceptions.KeyReadError("Could not find file at {}".format(path))
+        raise KeyReadError("Could not find file at {}".format(path))
 
     # remove the unwanted data
     data1 = raw_data.replace(b"-----BEGIN RSA PRIVATE KEY-----", b"")
@@ -172,7 +161,7 @@ def load_pem_priv(path, file="PRIVATE_KEY.pem"):
         decoded = decoder.decode(der, asn1Spec=PrivKey())[0]
     
     except:
-        raise exceptions.KeyReadError("Could not decode file")
+        raise KeyReadError("Could not decode file")
 
     # get the values from the sequence and add them to the list
     values = []
