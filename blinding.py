@@ -20,7 +20,10 @@ def get_blinding_factor(n):
 
 
 def blinded_operation(c, n, e, d):
-    """Decrypt or sign a message using"""
+    """
+    Decrypt or sign a message using to blinding prevent side channel attacks
+    See: https://en.wikipedia.org/wiki/Side-channel_attack
+    """
     b, binv = get_blinding_factor(n)
     blinded = (pow(b, e, n) * c) % n
 
