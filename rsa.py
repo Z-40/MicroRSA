@@ -3,7 +3,7 @@ import random
 import hashlib
 import warnings
 
-from MicroRSA.rabin_miller import get_primes
+from MicroRSA.prime import get_primes
 
 from MicroRSA.pem import (
     load_pem_priv, load_pem_pub,
@@ -66,8 +66,8 @@ class PublicKey(AbstractKey):
         # the default value for E is always set to 65537
         self.e = 65537  
 
-        # if the modulus is less than 65537, we calculate E such that 
-        # E and phi are relatively prime
+        # if the modulus is less than 65537, we calculate e such that 
+        # e and phi are relatively prime
         if self.n < 65537:
             while True:
                 e = random.randint(2, self.phi)
@@ -138,8 +138,8 @@ def newkeys(strength: int, path: str) -> tuple:
     if strength < 1024:
         warnings.warn("WARNING: The key strength is too low")
 
-    # raise an exception because a key size less than 256 bits is unacceptable
-    if strength < 256:
+    # raise an exception because a key size less than 512 bits is unacceptable
+    if strength < 512:
         raise KeyGenerationError("The key strength is too low")
 
     p, q = get_primes(strength)
