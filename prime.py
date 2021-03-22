@@ -135,7 +135,7 @@ def getprime(n: int, e=65537) -> int:
     return x
         
 
-def get_primes(blen: int, e:int) -> tuple:
+def get_primes(blen: int, e=65537) -> tuple:
     """
     Get two large primes
     :param blen: Intended bit length of modulus
