@@ -18,6 +18,7 @@ import random
 
 from MicroRSA.common import modular_inv
 from MicroRSA.sieve_base import sieve_base
+from MicroRSA.exceptions import PrimeGenerationError
 
 
 def miller_rabin(n: int, k: int) -> bool:
@@ -130,7 +131,7 @@ def getprime(n: int, e=65537) -> int:
         x += increment
 
         if x >= 1 << n:
-            raise RuntimeError("Couln't find prime in field")
+            raise PrimeGenerationError("Couln't find prime in field")
                                
     return x
         
