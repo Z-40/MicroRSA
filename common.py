@@ -100,7 +100,3 @@ def int2bytes(number: int, fill_size: int) -> bytes:
 def bytes2int(b, signed=False):
     """Convert bytes to an int"""
     return int.from_bytes(b, "big", signed=signed)
-
-
-if __name__ == "__main__":
-    pass
