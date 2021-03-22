@@ -62,4 +62,7 @@ def pad_for_signing(m: bytes, dlen: int) -> bytes:
 
     padding_length = dlen - mlen - 3
 
-    return b"".join((b"\x00\x01", b"\xff" * padding_length, b"\x00", bytes(m, "utf-8")))   
+    return b"".join((
+        b"\x00\x01", b"\xff" * padding_length, 
+        b"\x00", bytes(m, "utf-8")
+    ))   
