@@ -48,8 +48,7 @@ class PrivKey(univ.Sequence):
 
 
 def save_pem_priv(n, e, d, p, q, dp, dq, qInv, path, file="PRIVATE_KEY.pem"):
-    """
-    Save a pem encoded private key
+    """Save a pem encoded private key
     :param n: Modulus
     :param e: Public Exponent
     :param d: Private Exponent
@@ -59,8 +58,7 @@ def save_pem_priv(n, e, d, p, q, dp, dq, qInv, path, file="PRIVATE_KEY.pem"):
     :param dq: exp2
     :param qinv: q inverse
     :param path: Location to save the file
-    :param file: File name
-    """
+    :param file: File name"""
     template = "-----BEGIN RSA PRIVATE KEY-----\n{}-----END RSA PRIVATE KEY-----"
     names = (
         "version", "modulus", "publicExponent", 
@@ -84,13 +82,11 @@ def save_pem_priv(n, e, d, p, q, dp, dq, qInv, path, file="PRIVATE_KEY.pem"):
         raise KeyGenerationError("Could not write file to {}".format(path))
 
 def save_pem_pub(n, e, path, file="PUBLIC_KEY.pem"):
-    """
-    Save a pem encoded private key
+    """Save a pem encoded private key
     :param n: Modulus
     :param e: Public Exponent
     :param path: Location to save the file
-    :param file: File name
-    """
+    :param file: File name"""
     template = "-----BEGIN RSA PUBLIC KEY-----\n{}-----END RSA PUBLIC KEY-----"
     names = ("version", "modulus", "publicExponent")
     seq = PubKey()
@@ -112,11 +108,9 @@ def save_pem_pub(n, e, path, file="PUBLIC_KEY.pem"):
 
 
 def load_pem_pub(path, file="PUBLIC_KEY.pem"):
-    """
-    Load a pem encoded public key
+    """Load a pem encoded public key
     :param path: Location of file
-    :param file: File name
-    """
+    :param file: File name"""
     names = ("version", "modulus", "publicExponent")
 
     try:
@@ -148,11 +142,9 @@ def load_pem_pub(path, file="PUBLIC_KEY.pem"):
 
 
 def load_pem_priv(path, file="PRIVATE_KEY.pem"):
-    """
-    Load a pem encoded private key
+    """Load a pem encoded private key
     :param path: Location of file
-    :param file: File name
-    """
+    :param file: File name"""
     names = (
         "version", "modulus", "publicExponent", 
         "privateExponent", "prime1", "prime2", 
