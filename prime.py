@@ -22,12 +22,10 @@ from MicroRSA.exceptions import PrimeGenerationError
 
 
 def miller_rabin(n: int, k: int) -> bool:
-    """
-    Perform the rabin miller primality test
+    """Perform the rabin miller primality test
     :param n: Number to perform the test on
     :param k: Number of witnesses
-    :return: True if the number is prime and Flase if composite
-    """
+    :return: `True` if the number is prime and Flase if composite"""
     if n == 2:
         return True
 
@@ -54,8 +52,7 @@ def miller_rabin(n: int, k: int) -> bool:
 
 
 def getprime(n: int, e=65537) -> int:
-    """
-    Find a strong prime ``n`` bits in length
+    """Find a strong prime ``n`` bits in length
     :param n: Desired bit length of number
     :param e: Public exponent
     :return: A prime number exactly ``n`` bits in length
@@ -64,8 +61,7 @@ def getprime(n: int, e=65537) -> int:
     by Robert D. Silverman
 
     A copy of the document is available for download at:
-    https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2713&rep=rep1&type=pdf
-    """
+    https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2713&rep=rep1&type=pdf"""
     x = (n - 512) >> 7
 
     lower_bound = lower_bound = divmod(
@@ -137,12 +133,10 @@ def getprime(n: int, e=65537) -> int:
         
 
 def get_primes(blen: int, e=65537) -> tuple:
-    """
-    Get two large primes
+    """Get two large primes
     :param blen: Intended bit length of modulus
     :param e: Public Exponent
-    :return: Returns the values as a tuple
-    """
+    :return: Returns the values as a tuple"""
     p = []
     for i in range(2):
         num = getprime(blen // 2, e)
