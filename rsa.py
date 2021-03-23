@@ -47,11 +47,9 @@ from MicroRSA.blinding import (
 
 
 class AbstractKey:
-    """
-    Base class for RSA public and private keys
-    :param p: A large prime number.
-    :param q: A large prime number
-    """
+    """Base class for RSA public and private keys
+    :param p: A large prime number
+    :param q: A large prime number"""
     def __init__(self, p: int, q: int) -> None:
         self.p = p
         self.q = q
@@ -59,12 +57,10 @@ class AbstractKey:
         self.phi = (self.p - 1) * (self.q - 1)
 
     def generate(self, directory, file) -> tuple:
-        """
-        Generates an RSA public or private key
+        """Generates an RSA public or private key
         :param directory: Location of file
         :param file: File name
-        :return: key data
-        """
+        :return: key data"""
 
 
 class PublicKey(AbstractKey):
@@ -92,24 +88,20 @@ class PublicKey(AbstractKey):
                     self.e = e
         
     def generate(self, directory=None, file="PUBLIC_KEY.pem") -> tuple:
-        """
-        Generates a RSA public key containing a tuple (n, e)
+        """Generates a RSA public key containing a tuple (n, e)
         where e is the public exponent and n is the modulus.
         :param directory: File path
         :param file: File name
-        :return: key data
-        """
+        :return: key data"""
         save_pem_pub(n=self.n, e=self.e, path=directory, file=file)
         return self.n, self.e
         
 
 class PrivateKey(AbstractKey):
-    """
-    RSA private key class
+    """RSA private key class
     :param p: A large prime number
     :param q: A large prime number
-    :param e: Public exponent
-    """
+    :param e: Public exponent"""
     def __init__(self, p, q, e) -> None:
         super().__init__(p, q)
         self.e = e
@@ -123,12 +115,10 @@ class PrivateKey(AbstractKey):
         self.qinv = modular_inv(self.q, self.p)
 
     def generate(self, directory, file="PRIVATE_KEY.pem") -> tuple:
-        """
-        Generates a RSA private key.
+        """Generates a RSA private key.
         :param directory: File path
         :param file: File name
-        :return: key data
-        """
+        :return: key data"""
         save_pem_priv(
             n=self.n, e=self.e, 
             d=self.d, p=self.p,
@@ -144,13 +134,11 @@ class PrivateKey(AbstractKey):
 
 
 def newkeys(strength: int, path: str) -> tuple:
-    """
-    Generates a new rsa keys which have a modulus of ``strength``
+    """Generates a new rsa keys which have a modulus of ``strength``
     bits in length
     :param strength: key strength
     :param path: File location
-    :return: Private key data
-    """
+    :return: Private key data"""
     # warn the user if the strength is less than 1024 bits
     if strength < 1024:
         warnings.warn("WARNING: The key strength is too low")
@@ -167,13 +155,11 @@ def newkeys(strength: int, path: str) -> tuple:
 
 
 def encrypt(message, directory, file="PUBLIC_KEY.pem") -> bytes:
-    """
-    Encrypt a byte string
+    """Encrypt a byte string
     :param message: Byte string containing the plain text message
     :param directory: Location of the public key
     :param file: Public key file name
-    :return: A byte string containing the encrypted message
-    """
+    :return: A byte string containing the encrypted message"""
 
     # load a pem encoded public key
     _, n, e = load_pem_pub(path=directory, file=file)
@@ -190,13 +176,11 @@ def encrypt(message, directory, file="PUBLIC_KEY.pem") -> bytes:
 
 
 def decrypt(c, directory, blinded=True, mode="decrypt", file="PRIVATE_KEY.pem") -> bytes:
-    """
-    Decrypt a byte string
+    """Decrypt a byte string
     :param c: Byte string containing the cipher text
     :param directory: Location of the public key
     :param file: Public key file name
-    :return: A byte string containing the decrypted message
-    """
+    :return: A byte string containing the decrypted message"""
     # load the pem encoded private key
     _, n, e, d, p, q, dp, dq, qinv = load_pem_priv(directory, file)
 
@@ -240,14 +224,12 @@ def decrypt(c, directory, blinded=True, mode="decrypt", file="PRIVATE_KEY.pem") 
 
 
 def sign(m: bytes, directory: str, hash=hashlib.sha256, file="PRIVATE_KEY.pem") -> bool:
-    """
-    Sign the message using the private key
+    """Sign the message using the private key
     :param m: The message to be signed
     :param directory: Location of RSA private key
     :param hash: Hashing algorithm
     :param file: File name of RSA private key 
-    :return: The signed message
-    """
+    :return: The signed message"""
     # hash the message
     mhash = hash(m).hexdigest()
 
@@ -266,15 +248,13 @@ def sign(m: bytes, directory: str, hash=hashlib.sha256, file="PRIVATE_KEY.pem") 
 
 
 def verify(s, m, directory, hash=hashlib.sha256, file="PUBLIC_KEY.pem"):
-    """
-    Verify the signature using the public key
+    """Verify the signature using the public key
     :param s: The signature
     :param m: The message
     :param directory: Location of public key
     :param hash: Hash algorithm to be used
     :param file: Name of public key
-    :return: ``True`` if the signature is verified and ``False`` if othervise
-    """
+    :return: ``True`` if the signature is verified and ``False`` if othervise"""
     _, n, e = load_pem_pub(directory, file)  # load the pem encoded public key
 
     # decrypt the message
