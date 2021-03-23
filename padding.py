@@ -21,13 +21,11 @@ from MicroRSA.exceptions import PaddingError
 
 
 def pad_for_encryption(m: bytes, dlen: int) -> bytes:
-    """
-    Pads a string m with random bytes for encryption 
+    """Pads a string m with random bytes for encryption 
     :param m: String to pad 
     :param dlen: Desired length of padded string
     :return: A padded byte-string
-    :return type: bytes
-    """
+    :return type: bytes"""
     mlen = len(m)
     max_len = dlen - 11
 
@@ -46,14 +44,12 @@ def pad_for_encryption(m: bytes, dlen: int) -> bytes:
 
 
 def pad_for_signing(m: bytes, dlen: int) -> bytes:
-    """
-    Pads a string m with random bytes for encryption 
+    """Pads a string m with random bytes for encryption 
     Padding for signing is different because it is a repetition of ff bytes
     :param m: String to pad 
     :param dlen: Desited length of padded string
     :return: A padded byte-string
-    :return type: bytes
-    """
+    :return type: bytes"""
     mlen = len(m)
     max_len = dlen - 11
 
