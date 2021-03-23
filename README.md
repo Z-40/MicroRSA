@@ -59,3 +59,12 @@ To verify the signature, use the `verify()` function.
 
 Here, `data` is the plain text we want to sign and `signature` is the rsa signature 
 and `"C:"` is the directory that contains thr rsa keypair.
+
+### Finding the strength of your RSA keys;
+The `get_key_strength()` function can be used to do this
+
+    >>> import MicroRSA as rsa
+    >>> rsa.get_key_strength("C:")
+    >>> 16384
+
+Just as before, `"C:"` is the directory that contains the RSA keypair.
