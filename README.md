@@ -1,9 +1,13 @@
 MicroRSA is a lightweight and easy-to-use library for python which lets you use RSA encryption in your projects.
 
 MicroRSA can perform all RSA operations such as encryption, decryption, signing and signature verification and can generate keys as large as 16384 bits quickly and accurately.
+***
 
+## Prequisites: 
+Before using MicroRSA in your projects, I recommend that you get a basic idea 
+of how RSA works, please check out the [RSA wiki](https://en.wikipedia.org/wiki/RSA_(cryptosystem)) to learn more.
 
-###### Key generation time:
+## Key generation time:
 - 512 bit: 1/4 second
 - 1024 bit: 1/2 second
 - 2048 bit: 1 seconds
@@ -11,8 +15,8 @@ MicroRSA can perform all RSA operations such as encryption, decryption, signing 
 - 8192 bit: 1 minute
 - 16384 bit: 10 minutes
 
-
-###### How to create new keys:
+## How to use:
+### Creating new keys:
 You can easily create RSA keys using the `newkeys()` function. 
 
     >>> import MicroRSA as rsa
@@ -20,24 +24,38 @@ You can easily create RSA keys using the `newkeys()` function.
 
 Here, 4096 is the key strength and `"C:"` is the directory in which to save the keys.
 
-
-###### How to encrypt/decrypt data: 
+### Encrypting/decrypting data: 
 You can encrypt data using the `encrypt()` function.
 
     >>> import MicroRSA as rsa
-    >>> plaintext = b"THE ANSWER IS NO"
-    >>> crypto = encrypt(plaintext, "C:")
-
+    >>> plaintext = b"THE ANSWER IS NO!"
+    >>> crypto = rsa.encrypt(plaintext, "C:")
 
 To decrypt the cipher text, use the `decrypt()` function.
 
     >>> import MicroRSA as rsa
-    >>> plaintext = b"THE ANSWER IS NO"
-    >>> crypto = encrypt(plaintext, "C:")
-    >>> decrypt(crypto, "C:")
-    b"THE ANSWER IS NO"
+    >>> plaintext = b"THE ANSWER IS NO!"
+    >>> crypto = rsa.encrypt(plaintext, "C:")
+    >>> rsa.decrypt(crypto, "C:")
+    b"THE ANSWER IS NO!"
 
 `plaintext` is the data we want to encrypt and `crypto` is the cipher text (Both `plaintext` and `crypto` must be byte strings) 
 and `"C:"` is the directory where the RSA keypair is stored.
 
+### Signing data and verifying signatures:
+You can get the signature of the data using the `sign()` function.
 
+    >>> import MicroRSA as rsa
+    >>> data = b"Just some text I want to sign"
+    >>> singnature = rsa.sign(data, "C:")
+
+To verify the signature, use the `verify()` function.
+
+    >>> import MicroRSA as rsa
+    >>> data = b"Just some text I want to sign"
+    >>> signature = rsa.sign(data, "C:")
+    >>> rsa.verify(signature, data, "C:")
+    True
+
+Here, `data` is the plain text we want to sign and `signature` is the rsa signature 
+and `"C:"` is the directory that contains thr rsa keypair.
