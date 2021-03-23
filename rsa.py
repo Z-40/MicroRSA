@@ -34,7 +34,7 @@ from MicroRSA.common import (
 
 from MicroRSA.exceptions import (
     VerificationError, DecryptionError, 
-    KeyGenerationError
+    KeyGenerationError, KeyReadError
 )
 
 from MicroRSA.padding import (
@@ -289,3 +289,21 @@ def verify(s, m, directory, hash=hashlib.sha256, file="PUBLIC_KEY.pem"):
         return True
     else:
         return False
+
+
+def get_key_strength(directory, keytype="public", name="PUBLIC_KEY.pem"):
+    """Reads a key and returns the key's strength, i.e., the bit length of the modulus
+    :param: directory: The location of key
+    :param keytype: If you want to read the modulus from the public key,
+                    set this to ``"public"``, else, set this to ``"private"``
+    :param name: the name of the public or private key"""
+    if keytype == "public":
+        data = load_pem_pub(directory, name)
+
+    elif keytype == "private":
+        data = load_pem_priv(directory, name)
+
+    else: 
+        raise KeyReadError("{} is not a valid key type".format(keytype))
+
+    return data[1].bit_length()

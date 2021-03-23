@@ -5,3 +5,4 @@ from MicroRSA.rsa import decrypt
 from MicroRSA.rsa import newkeys
 from MicroRSA.rsa import sign
 from MicroRSA.rsa import verify
+from MicroRSA.rsa import get_key_strength
