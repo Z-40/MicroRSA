@@ -35,11 +35,9 @@ def get_rand_num(maxvalue: int) -> int:
 
 
 def egcd(a, b) -> tuple:
-    """
-    Perform the extended elucidean algorithm
+    """Perform the extended elucidean algorithm
     :param a: the first integer
-    :param b: the second integer
-    """
+    :param b: the second integer"""
     x = 0
     y = 1
     lx = 1
@@ -59,11 +57,9 @@ def egcd(a, b) -> tuple:
 
 
 def modular_inv(a, m) -> int:
-    """
-    Find the modular multiplicative inverse of two numbers
+    """Find the modular multiplicative inverse of two numbers
     :param a: the first integer
-    :param m: the second integer
-    """
+    :param m: the second integer"""
     g, x, y = egcd(a, m)
     if g != 1:
         raise Exception("Modular inverse does not exist")
@@ -72,11 +68,9 @@ def modular_inv(a, m) -> int:
 
 
 def byte_size(number: int) -> bytes:
-    """
-    Find the byte size of a number
+    """Find the byte size of a number
     :parm number: The number to find the byte size of
-    :return: The byte size of the number
-    """
+    :return: The byte size of the number"""
     quo, rem = divmod(number.bit_length(), 8)
     if rem:
         quo += 1
