@@ -77,11 +77,9 @@ class AbstractKey:
 
 
 class PublicKey(AbstractKey):
-    """
-    RSA public key class
+    """RSA public key class
     :param p: A large prime number
-    :param q: A large prime number
-    """
+    :param q: A large prime number"""
     def __init__(self, p, q) -> None:
         super().__init__(p, q)
         
@@ -296,3 +294,23 @@ def get_key_strength(directory, keytype="public", name="PUBLIC_KEY.pem"):
         raise KeyReadError("{} is not a valid key type".format(keytype))
 
     return data[1].bit_length()
+    
+
+def private2public(directory, write=True, pub_key_name="PUBLIC_KEY.pem", 
+                   priv_key_name="PRIVATE_KEY.pem"):
+    """Read a private key and return the public key
+    :param directory: The directory containing the private key
+    :param write: Write the data to a file if set to True, else just return n and e
+    :param pub_key_name: Write data to this file if write is turned on
+    :param priv_key_name: Read data from this file
+    :return: Public key data"""
+    _, n, e, _, _, _, _, _, _ = load_pem_priv(directory, priv_key_name)
+
+    # if write is set to False, return n and e
+    if not write:
+        return n, e
+
+    # if write is set to True, write the data to a file and return n ande
+    if write:
+        save_pem_pub(n, e, directory, pub_key_name)
+        return n, e
