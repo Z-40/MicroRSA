@@ -56,6 +56,23 @@ class AbstractKey:
         self.n = self.p * self.q
         self.phi = (self.p - 1) * (self.q - 1)
 
+        # the default value for e is always set to 65537
+        self.e = 65537  
+
+        # if the modulus is less than 65537, we calculate e such that 
+        # e and phi are relatively prime
+        if self.n < 65537:
+            while True:
+                e = random.randint(2, self.phi)
+                if math.gcd(e, self.phi) == 1:
+                    self.e = e
+
+        self.d = modular_inv(self.e, self.phi)
+        self.dp = self.d % (self.p - 1)
+        self.dq = self.d % (self.q - 1)
+        self.qinv = modular_inv(self.q, self.p)
+
+
     def generate(self, directory, file) -> tuple:
         """Generates an RSA public or private key
         :param directory: Location of file
@@ -76,7 +93,7 @@ class PublicKey(AbstractKey):
         self.n = self.p * self.q
         self.phi = (self.p - 1) * (self.q - 1)
 
-        # the default value for E is always set to 65537
+        # the default value for e is always set to 65537
         self.e = 65537  
 
         # if the modulus is less than 65537, we calculate e such that 
