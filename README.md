@@ -68,3 +68,14 @@ The `get_key_strength()` function can be used to do this
     >>> 16384
 
 Just as before, `"C:"` is the directory that contains the RSA keypair.
+
+### Deriving the public key from the private key
+This can done using `private2pub()` function
+
+    >>> import MicroRSA as rsa
+    >>> data = rsa.private2pub("C:", write=False)
+
+If `write` is set to `False`, the function will only return the public key data,
+however, if `write` is set to `True`, the function will return the key data and write the data 
+to a file.
+
