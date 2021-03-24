@@ -23,8 +23,20 @@ import pyasn1.codec.der.decoder as decoder
 from MicroRSA.exceptions import KeyGenerationError, KeyReadError
 
 
-class PubKey(univ.Sequence):
-    """RSA public key structure"""
+class PubKeySequence(univ.Sequence):
+    """RSA public key structure
+    RSAPrivateKey ::= SEQUENCE {
+        version           Version,
+        modulus           INTEGER,  -- n
+        publicExponent    INTEGER,  -- e
+        privateExponent   INTEGER,  -- d
+        prime1            INTEGER,  -- p
+        prime2            INTEGER,  -- q
+        exponent1         INTEGER,  -- d mod (p-1)
+        exponent2         INTEGER,  -- d mod (q-1)
+        coefficient       INTEGER,  -- (inverse of q) mod p
+        otherPrimeInfos   OtherPrimeInfos OPTIONAL
+    }"""
     componentType = namedtype.NamedTypes(
         namedtype.NamedType("version", univ.Integer()),
         namedtype.NamedType("modulus", univ.Integer()),
@@ -32,8 +44,12 @@ class PubKey(univ.Sequence):
     )
 
 
-class PrivKey(univ.Sequence):
-    """RSA private key structure"""
+class PrivKeySequence(univ.Sequence):
+    """RSA private key structure
+        RSAPublicKey ::= SEQUENCE {
+        modulus           INTEGER,  -- n
+        publicExponent    INTEGER   -- e
+    }"""
     componentType = namedtype.NamedTypes(
         namedtype.NamedType("version", univ.Integer()),
         namedtype.NamedType("modulus", univ.Integer()),
@@ -65,7 +81,7 @@ def save_pem_priv(n, e, d, p, q, dp, dq, qInv, path, file="PRIVATE_KEY.pem"):
         "privateExponent", "prime1", "prime2", 
         "exponent1", "exponent2", "coefficient"
     )
-    seq = PrivKey()
+    seq = PrivKeySequence()
     for i, x in enumerate((0, n, e, d, p, q, dp, dq, qInv)):
         seq.setComponentByName(names[i], univ.Integer(x))
 
@@ -89,7 +105,7 @@ def save_pem_pub(n, e, path, file="PUBLIC_KEY.pem"):
     :param file: File name"""
     template = "-----BEGIN RSA PUBLIC KEY-----\n{}-----END RSA PUBLIC KEY-----"
     names = ("version", "modulus", "publicExponent")
-    seq = PubKey()
+    seq = PubKeySequence()
 
     for i, x in enumerate((0, n, e)):
         seq.setComponentByName(names[i], univ.Integer(x))
@@ -128,7 +144,7 @@ def load_pem_pub(path, file="PUBLIC_KEY.pem"):
     # decode the base64 data
     try:
         der = base64.decodebytes(data3)
-        decoded = decoder.decode(der, asn1Spec=PubKey())[0]
+        decoded = decoder.decode(der, asn1Spec=PubKeySequence())[0]
 
     except:
         raise KeyReadError("Could not decode file")
@@ -166,7 +182,7 @@ def load_pem_priv(path, file="PRIVATE_KEY.pem"):
     # decode the base64 data
     try:
         der = base64.decodebytes(data3)
-        decoded = decoder.decode(der, asn1Spec=PrivKey())[0]
+        decoded = decoder.decode(der, asn1Spec=PrivKeySequence())[0]
     
     except:
         raise KeyReadError("Could not decode file")
