@@ -59,13 +59,9 @@ class AbstractKey:
         # the default value for e is always set to 65537
         self.e = 65537  
 
-        # if the modulus is less than 65537, we calculate e such that 
-        # e and phi are relatively prime
+        # if the modulus is less than 65537, e is set to 3
         if self.n < 65537:
-            while True:
-                e = random.randint(2, self.phi)
-                if math.gcd(e, self.phi) == 1:
-                    self.e = e
+            self.e = 3
 
         self.d = modular_inv(self.e, self.phi)
         self.dp = self.d % (self.p - 1)
@@ -88,21 +84,6 @@ class PublicKey(AbstractKey):
     """
     def __init__(self, p, q) -> None:
         super().__init__(p, q)
-        self.p = p
-        self.q = q
-        self.n = self.p * self.q
-        self.phi = (self.p - 1) * (self.q - 1)
-
-        # the default value for e is always set to 65537
-        self.e = 65537  
-
-        # if the modulus is less than 65537, we calculate e such that 
-        # e and phi are relatively prime
-        if self.n < 65537:
-            while True:
-                e = random.randint(2, self.phi)
-                if math.gcd(e, self.phi) == 1:
-                    self.e = e
         
     def generate(self, directory=None, file="PUBLIC_KEY.pem") -> tuple:
         """Generates a RSA public key containing a tuple (n, e)
@@ -119,17 +100,8 @@ class PrivateKey(AbstractKey):
     :param p: A large prime number
     :param q: A large prime number
     :param e: Public exponent"""
-    def __init__(self, p, q, e) -> None:
+    def __init__(self, p, q) -> None:
         super().__init__(p, q)
-        self.e = e
-        self.p = p
-        self.q = q
-        self.n = self.p * self.q
-        self.phi = (self.p - 1) * (self.q - 1)
-        self.d = modular_inv(self.e, self.phi)
-        self.dp = self.d % (self.p - 1)
-        self.dq = self.d % (self.q - 1)
-        self.qinv = modular_inv(self.q, self.p)
 
     def generate(self, directory, file="PRIVATE_KEY.pem") -> tuple:
         """Generates a RSA private key.
@@ -165,8 +137,8 @@ def newkeys(strength: int, path: str) -> tuple:
         raise KeyGenerationError("The key strength is too low")
 
     p, q = get_primes(strength)
-    _, e = PublicKey(p, q).generate(path)
-    data = PrivateKey(p, q, e).generate(path)
+    PublicKey(p, q).generate(path)
+    data = PrivateKey(p, q).generate(path)
 
     return data
 
