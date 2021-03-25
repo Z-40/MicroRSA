@@ -95,8 +95,7 @@ class PublicKey(AbstractKey):
 class PrivateKey(AbstractKey):
     """RSA private key class
     :param p: A large prime number
-    :param q: A large prime number
-    :param e: Public exponent"""
+    :param q: A large prime number"""
     def __init__(self, p, q) -> None:
         super().__init__(p, q)
 
@@ -122,8 +121,10 @@ class PrivateKey(AbstractKey):
 def newkeys(strength: int,  directory: str, pub_name="PUBLIC_KEY.pem", 
             pri_name="PRIVATE_KEY.pem") -> tuple:
     """Generates new RSA keys which have a modulus of ``strength`` bits in length
+    :param pub_name: Name of the public key
+    :param pri_name: Name of the private key
     :param strength: key strength
-    :param path: File location
+    :param directory: File location
     :return: Private key data"""
     # warn the user if the strength is less than 1024 bits
     if strength < 1024:
@@ -160,11 +161,12 @@ def encrypt(message, directory, file="PUBLIC_KEY.pem") -> bytes:
     return encrypted
 
 
-def decrypt(c, directory, blinded=True, mode="decrypt", file="PRIVATE_KEY.pem") -> bytes:
+def decrypt(c, directory, blinded=True, file="PRIVATE_KEY.pem") -> bytes:
     """Decrypt a byte string
     :param c: Byte string containing the cipher text
     :param directory: Location of the public key
-    :param file: Public key file name
+    :param blinded: Use blinding if set to ``True``, if not, use CRT
+    :param file: Private key file name
     :return: A byte string containing the decrypted message"""
     # load the pem encoded private key
     _, n, e, d, p, q, dp, dq, qinv = load_pem_priv(directory, file)
@@ -191,16 +193,16 @@ def decrypt(c, directory, blinded=True, mode="decrypt", file="PRIVATE_KEY.pem") 
 
     # the \x00\x02 bytes must be present
     if decrypted[0:2] != b"\x00\002":
-        raise DecryptionError("Decryption failed because cleartext "
+        raise DecryptionError("Decryption failed because clear text "
                               "markers are not present")
     
     # the byte length of the decrypted message must be equal to that of the modulus
     elif nbytes != len(decrypted):
         raise DecryptionError("Decryption failed because the byte "
-                              "length of the modulusis not equal to "
+                              "length of the modulus not equal to "
                               "that of the cipher text")
     
-    # the \x00 seperator must be present
+    # the \x00 separator must be present
     elif b"\x00" not in decrypted:
         raise DecryptionError("Decryption failed because \\x00 "
                               "separator not present")
@@ -239,7 +241,7 @@ def verify(s, m, directory, hash=hashlib.sha256, file="PUBLIC_KEY.pem"):
     :param directory: Location of public key
     :param hash: Hash algorithm to be used
     :param file: Name of public key
-    :return: ``True`` if the signature is verified and ``False`` if othervise"""
+    :return: ``True`` if the signature is verified and ``False`` if otherwise"""
     _, n, e = load_pem_pub(directory, file)  # load the pem encoded public key
 
     # decrypt the message
@@ -250,21 +252,21 @@ def verify(s, m, directory, hash=hashlib.sha256, file="PUBLIC_KEY.pem"):
 
     # the \x00\x01 bytes must be present
     if decrypted_s[0:2] != b"\x00\001":
-        raise VerificationError("Verification failed because cleartext "
+        raise VerificationError("Verification failed because clear text "
                                 "markers are not present")
     
     # the byte length of the decrypted message must be equal to that of the modulus
     elif nbytes != len(decrypted_s):
         raise VerificationError("Verification failed because the byte "
-                                "length of the modulusis not equal to "
+                                "length of the modulus not equal to "
                                 "that of the cipher text")
     
-    # the \x00 seperator must be present
+    # the \x00 separator must be present
     elif b"\x00" not in decrypted_s:
         raise VerificationError("Verification failed because \\x00 "
                                 "separator not present")
     
-    # we only read data after the 00 seperator
+    # we only read data after the 00 separator
     decrypted_s = decrypted_s[decrypted_s.index(b"\x00", 2) + 1:]  
 
     hashed_m = bytes(hash(m).hexdigest(), "utf-8")  # hash the message
@@ -278,7 +280,7 @@ def verify(s, m, directory, hash=hashlib.sha256, file="PUBLIC_KEY.pem"):
 
 def get_key_strength(directory, keytype="public", name="PUBLIC_KEY.pem"):
     """Reads a key and returns the key's strength, i.e., the bit length of the modulus
-    :param: directory: The location of key
+    :param directory: The location of key
     :param keytype: If you want to read the modulus from the public key,
                     set this to ``"public"``, else, set this to ``"private"``
     :param name: the name of the public or private key"""
@@ -309,7 +311,7 @@ def private2public(directory, write=True, pub_key_name="PUBLIC_KEY.pem",
     if not write:
         return n, e
 
-    # if write is set to True, write the data to a file and return n ande
+    # if write is set to True, write the data to a file and return n and e
     if write:
         save_pem_pub(n, e, directory, pub_key_name)
         return n, e
