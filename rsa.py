@@ -108,7 +108,7 @@ class PrivateKey(AbstractKey):
             n=self.n, e=self.e, 
             d=self.d, p=self.p,
             q=self.q, dp=self.dp, 
-            dq=self.dq, qInv=self.qinv,
+            dq=self.dq, qinv=self.qinv,
             path=directory, file=file
         )
         
