@@ -120,7 +120,7 @@ def save_pem_pub(n, e, path, file="PUBLIC_KEY.pem"):
         with open("{}\{}".format(path, file), "wb") as f:
             f.write(bytes(final_data, "ascii"))
 
-    except FileNotFoundError:
+    except PermissionError or FileExistsError:
         raise KeyGenerationError("Could not write file to {}".format(path))
 
 
