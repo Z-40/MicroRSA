@@ -25,7 +25,7 @@ def miller_rabin(n: int, k: int) -> bool:
     """Perform the rabin miller primality test
     :param n: Number to perform the test on
     :param k: Number of witnesses
-    :return: `True` if the number is prime and ``False`` if composite"""
+    :return: ``True`` if the number is prime and ``False`` if composite"""
     if n == 2:
         return True
 
