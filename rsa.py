@@ -68,7 +68,6 @@ class AbstractKey:
         self.dq = self.d % (self.q - 1)
         self.qinv = modular_inv(self.q, self.p)
 
-
     def generate(self, directory, file) -> tuple:
         """Generates an RSA public or private key
         :param directory: Location of file
@@ -83,7 +82,7 @@ class PublicKey(AbstractKey):
     def __init__(self, p, q) -> None:
         super().__init__(p, q)
         
-    def generate(self, directory=None, file="PUBLIC_KEY.pem") -> tuple:
+    def generate(self, directory, file="PUBLIC_KEY.pem") -> tuple:
         """Generates a RSA public key containing a tuple (n, e)
         where e is the public exponent and n is the modulus.
         :param directory: File path
@@ -120,9 +119,9 @@ class PrivateKey(AbstractKey):
         )
 
 
-def newkeys(strength: int, path: str) -> tuple:
-    """Generates a new rsa keys which have a modulus of ``strength``
-    bits in length
+def newkeys(strength: int,  directory: str, pub_name="PUBLIC_KEY.pem", 
+            pri_name="PRIVATE_KEY.pem") -> tuple:
+    """Generates new RSA keys which have a modulus of ``strength`` bits in length
     :param strength: key strength
     :param path: File location
     :return: Private key data"""
@@ -135,8 +134,8 @@ def newkeys(strength: int, path: str) -> tuple:
         raise KeyGenerationError("The key strength is too low")
 
     p, q = get_primes(strength)
-    PublicKey(p, q).generate(path)
-    data = PrivateKey(p, q).generate(path)
+    PublicKey(p, q).generate(directory, pub_name)
+    data = PrivateKey(p, q).generate(directory, pri_name)
 
     return data
 
@@ -147,7 +146,6 @@ def encrypt(message, directory, file="PUBLIC_KEY.pem") -> bytes:
     :param directory: Location of the public key
     :param file: Public key file name
     :return: A byte string containing the encrypted message"""
-
     # load a pem encoded public key
     _, n, e = load_pem_pub(path=directory, file=file)
 
@@ -304,6 +302,7 @@ def private2public(directory, write=True, pub_key_name="PUBLIC_KEY.pem",
     :param pub_key_name: Write data to this file if write is turned on
     :param priv_key_name: Read data from this file
     :return: Public key data"""
+    # read the modulus and public exponent from the private key
     _, n, e, _, _, _, _, _, _ = load_pem_priv(directory, priv_key_name)
 
     # if write is set to False, return n and e
