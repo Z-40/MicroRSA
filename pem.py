@@ -11,7 +11,7 @@
 #  limitations under the License.
 
 """Contains all functions related to reading/writing
-RSA public/private keys using Privacy Enchanced Mail (PEM)
+RSA public/private keys using Privacy Enhanced Mail (PEM)
 See https://en.wikipedia.org/wiki/Privacy-Enhanced_Mail for more info"""
 
 import base64
@@ -63,7 +63,7 @@ class PrivKeySequence(univ.Sequence):
     )
 
 
-def save_pem_priv(n, e, d, p, q, dp, dq, qInv, path, file="PRIVATE_KEY.pem"):
+def save_pem_priv(n, e, d, p, q, dp, dq, qinv, path, file="PRIVATE_KEY.pem"):
     """Save a pem encoded private key
     :param n: Modulus
     :param e: Public Exponent
@@ -82,7 +82,7 @@ def save_pem_priv(n, e, d, p, q, dp, dq, qInv, path, file="PRIVATE_KEY.pem"):
         "exponent1", "exponent2", "coefficient"
     )
     seq = PrivKeySequence()
-    for i, x in enumerate((0, n, e, d, p, q, dp, dq, qInv)):
+    for i, x in enumerate((0, n, e, d, p, q, dp, dq, qinv)):
         seq.setComponentByName(names[i], univ.Integer(x))
 
     # encode the sequence and insert into the template
@@ -94,8 +94,9 @@ def save_pem_priv(n, e, d, p, q, dp, dq, qInv, path, file="PRIVATE_KEY.pem"):
         with open("{}\{}".format(path, file), "wb") as f:
             f.write(bytes(final_data, "ascii"))
 
-    except:
+    except PermissionError or FileExistsError:
         raise KeyGenerationError("Could not write file to {}".format(path))
+
 
 def save_pem_pub(n, e, path, file="PUBLIC_KEY.pem"):
     """Save a pem encoded private key
@@ -119,7 +120,7 @@ def save_pem_pub(n, e, path, file="PUBLIC_KEY.pem"):
         with open("{}\{}".format(path, file), "wb") as f:
             f.write(bytes(final_data, "ascii"))
 
-    except:
+    except FileNotFoundError:
         raise KeyGenerationError("Could not write file to {}".format(path))
 
 
@@ -133,7 +134,7 @@ def load_pem_pub(path, file="PUBLIC_KEY.pem"):
         with open("{}\{}".format(path, file), "rb") as f:
             raw_data = f.read()
 
-    except:
+    except FileNotFoundError:
         raise KeyReadError("Could not find file at {}".format(path))
     
     # remove the unwanted data
@@ -146,7 +147,7 @@ def load_pem_pub(path, file="PUBLIC_KEY.pem"):
         der = base64.decodebytes(data3)
         decoded = decoder.decode(der, asn1Spec=PubKeySequence())[0]
 
-    except:
+    except TypeError:
         raise KeyReadError("Could not decode file")
 
     # get the values from the sequence and add them to the list
@@ -171,7 +172,7 @@ def load_pem_priv(path, file="PRIVATE_KEY.pem"):
         with open("{}\{}".format(path, file), "rb") as f:
             raw_data = f.read()
 
-    except:
+    except FileNotFoundError:
         raise KeyReadError("Could not find file at {}".format(path))
 
     # remove the unwanted data
@@ -184,7 +185,7 @@ def load_pem_priv(path, file="PRIVATE_KEY.pem"):
         der = base64.decodebytes(data3)
         decoded = decoder.decode(der, asn1Spec=PrivKeySequence())[0]
     
-    except:
+    except TypeError:
         raise KeyReadError("Could not decode file")
 
     # get the values from the sequence and add them to the list
