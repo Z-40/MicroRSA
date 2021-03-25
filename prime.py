@@ -25,7 +25,7 @@ def miller_rabin(n: int, k: int) -> bool:
     """Perform the rabin miller primality test
     :param n: Number to perform the test on
     :param k: Number of witnesses
-    :return: `True` if the number is prime and Flase if composite"""
+    :return: `True` if the number is prime and ``False`` if composite"""
     if n == 2:
         return True
 
@@ -51,7 +51,7 @@ def miller_rabin(n: int, k: int) -> bool:
     return True
 
 
-def getprime(n: int, e=65537) -> int:
+def get_prime(n: int, e=65537) -> int:
     """Find a strong prime ``n`` bits in length
     :param n: Desired bit length of number
     :param e: Public exponent
@@ -61,15 +61,16 @@ def getprime(n: int, e=65537) -> int:
     by Robert D. Silverman
 
     A copy of the document is available for download at:
-    https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2713&rep=rep1&type=pdf"""
+    https://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.17.2713&rep=rep1&type=pdf
+    """
     x = (n - 512) >> 7
 
-    lower_bound = lower_bound = divmod(
-        (14142135623730950489) * ((2) ** (511 + 128 * x)),
-        (10000000000000000000)
+    lower_bound = divmod(
+        14142135623730950489 * (2 ** (511 + 128 * x)),
+        10000000000000000000
     )[0]
 
-    upper_bound = (1 << (512 + 128*x)) - 1
+    upper_bound = (1 << (512 + 128 * x)) - 1
 
     x = random.randrange(lower_bound, upper_bound)
 
@@ -127,19 +128,19 @@ def getprime(n: int, e=65537) -> int:
         x += increment
 
         if x >= 1 << n:
-            raise PrimeGenerationError("Couln't find prime in field")
+            raise PrimeGenerationError("Couldn't find prime in field")
                                
     return x
         
 
-def get_primes(blen: int, e=65537) -> tuple:
+def get_primes(blen: int, e=65537) -> List[int]:
     """Get two large primes
     :param blen: Intended bit length of modulus
     :param e: Public Exponent
     :return: Returns the values as a tuple"""
     p = []
     for i in range(2):
-        num = getprime(blen // 2, e)
+        num = get_prime(blen // 2, e)
         p.append(num)
 
     return p
