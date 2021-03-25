@@ -14,21 +14,25 @@
 
 
 class KeyGenerationError(BaseException):
-    """This exception is only raised when an error occours 
+    """This exception is only raised when an error occurs
     during key generation"""
+
 
 class KeyReadError(BaseException):
     """Exception raised when key cannot be read"""
 
+
 class DecryptionError(BaseException):
     """This exception is raised when decryption fails"""
 
+
 class VerificationError(BaseException):
-    """This exception is raised when signature verfication fails"""
+    """This exception is raised when signature verification fails"""
+
 
 class PaddingError(BaseException):
     """This exception is raised when padding fails"""
 
+
 class PrimeGenerationError(BaseException):
     """This exception is raised when prime generation fails"""
-
