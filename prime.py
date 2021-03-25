@@ -133,7 +133,7 @@ def get_prime(n: int, e=65537) -> int:
     return x
         
 
-def get_primes(blen: int, e=65537) -> List[int]:
+def get_primes(blen: int, e=65537) -> list:
     """Get two large primes
     :param blen: Intended bit length of modulus
     :param e: Public Exponent
