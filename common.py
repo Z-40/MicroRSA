@@ -17,7 +17,7 @@ import random
 
 
 def get_rand_num(maxvalue: int) -> int:
-    """Find a random number which is approxmately ``maxvalue`` in length."""
+    """Find a random number which is approximately ``maxvalue`` in length."""
     bit_size = maxvalue.bit_length()
 
     tries = 0
@@ -35,7 +35,7 @@ def get_rand_num(maxvalue: int) -> int:
 
 
 def egcd(a, b) -> tuple:
-    """Perform the extended elucidean algorithm
+    """Perform the extended euclidean algorithm
     :param a: the first integer
     :param b: the second integer"""
     x = 0
@@ -67,7 +67,7 @@ def modular_inv(a, m) -> int:
         return x % m
 
 
-def byte_size(number: int) -> bytes:
+def byte_size(number: int) -> int:
     """Find the byte size of a number
     :parm number: The number to find the byte size of
     :return: The byte size of the number"""
