@@ -24,8 +24,7 @@ def pad_for_encryption(m: bytes, dlen: int) -> bytes:
     """Pads a string m with random bytes for encryption 
     :param m: String to pad 
     :param dlen: Desired length of padded string
-    :return: A padded byte-string
-    :return type: bytes"""
+    :return: A padded byte-string"""
     mlen = len(m)
     max_len = dlen - 11
 
@@ -47,7 +46,7 @@ def pad_for_signing(m: bytes, dlen: int) -> bytes:
     """Pads a string m with random bytes for encryption 
     Padding for signing is different because it is a repetition of ff bytes
     :param m: String to pad 
-    :param dlen: Desited length of padded string
+    :param dlen: Desired length of padded string
     :return: A padded byte-string
     :return type: bytes"""
     mlen = len(m)
@@ -60,5 +59,5 @@ def pad_for_signing(m: bytes, dlen: int) -> bytes:
 
     return b"".join((
         b"\x00\x01", b"\xff" * padding_length, 
-        b"\x00", bytes(m, "utf-8")
+        b"\x00", m
     ))   
