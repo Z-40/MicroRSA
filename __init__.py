@@ -1,5 +1,3 @@
-# Copyright (C) 2021 Z-40
-
 from MicroRSA.rsa import get_key_strength
 from MicroRSA.rsa import private2public
 from MicroRSA.rsa import encrypt

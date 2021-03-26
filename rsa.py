@@ -1,5 +1,3 @@
-# Copyright (C) 2021 Z-40
-
 #  Licensed under the General Public License, Version 3.0 (the "License");
 #  you may not use this file except in compliance with the License.
 #  You may obtain a copy of the License at
@@ -46,15 +44,6 @@ from MicroRSA.padding import (
 from MicroRSA.blinding import (
     get_blinding_factor, blinded_operation
 )
-
-
-__all__ = [
-    "get_key_strength", "private2public",
-    "AbstractKey", "PublicKey",
-    "PrivateKey", "newkeys",
-    "encrypt", "decrypt",
-    "sign", "verify"
-]
 
 
 class AbstractKey:
