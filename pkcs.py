@@ -47,6 +47,19 @@ from blinding import (
     get_blinding_factor, blinded_operation
 )
 
+__all__ = [
+    "get_key_strength",
+    "private2public",
+    "AbstractKey",
+    "PrivateKey",
+    "PublicKey",
+    "newkeys",
+    "encrypt",
+    "decrypt",
+    "verify",
+    "sign"
+]
+
 
 class AbstractKey:
     """Base class for RSA public and private keys
