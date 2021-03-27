@@ -212,7 +212,7 @@ def decrypt(c, directory, blinded=True, file="PRIVATE_KEY.pem") -> bytes:
     return decrypted[decrypted.index(b"\x00", 2) + 1:]
 
 
-def sign(m: bytes, directory: str, hash=hashlib.sha256, file="PRIVATE_KEY.pem") -> bool:
+def sign(m: bytes, directory: str, hash=hashlib.sha256, file="PRIVATE_KEY.pem") -> bytes:
     """Sign the message using the private key
     :param m: The message to be signed
     :param directory: Location of RSA private key
@@ -229,7 +229,7 @@ def sign(m: bytes, directory: str, hash=hashlib.sha256, file="PRIVATE_KEY.pem") 
     nbytes = byte_size(n)
 
     # pad and encrypt the message
-    int_m = bytes2int(pad_for_signing(mhash, nbytes))
+    int_m = bytes2int(pad_for_signing(bytes(mhash, "ascii"), nbytes))
     encrypted = blinded_operation(int_m, n, e, d)
     encrypted = int2bytes(encrypted, nbytes)
 
@@ -271,7 +271,7 @@ def verify(s, m, directory, hash=hashlib.sha256, file="PUBLIC_KEY.pem"):
     # we only read data after the 00 separator
     decrypted_s = decrypted_s[decrypted_s.index(b"\x00", 2) + 1:]  
 
-    hashed_m = bytes(hash(m).hexdigest(), "utf-8")  # hash the message
+    hashed_m = bytes(hash(m).hexdigest(), "ascii")  # hash the message
 
     # compare the decrypted signature and the hash
     if hashed_m == decrypted_s:
