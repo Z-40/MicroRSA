@@ -16,9 +16,9 @@ RSA public and private keys"""
 import math
 import random
 
-from common import modular_inv
-from sieve_base import sieve_base
-from exceptions import PrimeGenerationError
+from micro_rsa.common import modular_inv
+from micro_rsa.sieve_base import sieve_base
+from micro_rsa.exceptions import PrimeGenerationError
 
 
 def miller_rabin(n: int, k: int) -> bool:

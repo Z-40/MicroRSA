@@ -20,28 +20,28 @@ import random
 import hashlib
 import warnings
 
-from prime import get_primes
+from micro_rsa.prime import get_primes
 
-from pem import (
+from micro_rsa.pem import (
     load_pem_priv, load_pem_pub,
     save_pem_priv, save_pem_pub
 )
 
-from common import (
+from micro_rsa.common import (
     byte_size, bytes2int, 
     modular_inv, int2bytes
 )
 
-from exceptions import (
+from micro_rsa.exceptions import (
     VerificationError, DecryptionError, 
     KeyGenerationError, KeyReadError
 )
 
-from padding import (
+from micro_rsa.padding import (
     pad_for_encryption, pad_for_signing
 )
 
-from blinding import (
+from micro_rsa.blinding import (
     get_blinding_factor, blinded_operation
 )
 

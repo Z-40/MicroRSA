@@ -15,7 +15,7 @@ decrypting using RSA, for more information on blinding see:
 https://en.wikipedia.org/wiki/Blinding_(cryptography)"""
 
 import math
-from common import get_rand_num, modular_inv
+from micro_rsa.common import get_rand_num, modular_inv
 
 
 def get_blinding_factor(n):
