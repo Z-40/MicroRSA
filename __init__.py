@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Copyright (C) 2021 Z-40
 
 # from rsa import get_key_strength
@@ -36,3 +37,14 @@ __all__ = [
 ]
 
 print(dir())
+=======
+from MicroRSA.rsa import get_key_strength
+from MicroRSA.rsa import private2public
+from MicroRSA.rsa import encrypt
+from MicroRSA.rsa import decrypt
+from MicroRSA.rsa import newkeys
+from MicroRSA.rsa import verify
+from MicroRSA.rsa import sign
+
+from MicroRSA.prime import get_primes
+>>>>>>> parent of 0b70dc9 (Add copyright)
