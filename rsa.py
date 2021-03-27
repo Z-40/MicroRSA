@@ -22,28 +22,28 @@ import random
 import hashlib
 import warnings
 
-from MicroRSA.prime import get_primes
+from prime import get_primes
 
-from MicroRSA.pem import (
+from pem import (
     load_pem_priv, load_pem_pub,
     save_pem_priv, save_pem_pub
 )
 
-from MicroRSA.common import (
+from common import (
     byte_size, bytes2int, 
     modular_inv, int2bytes
 )
 
-from MicroRSA.exceptions import (
+from exceptions import (
     VerificationError, DecryptionError, 
     KeyGenerationError, KeyReadError
 )
 
-from MicroRSA.padding import (
+from padding import (
     pad_for_encryption, pad_for_signing
 )
 
-from MicroRSA.blinding import (
+from blinding import (
     get_blinding_factor, blinded_operation
 )
 

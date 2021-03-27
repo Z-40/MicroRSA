@@ -19,7 +19,7 @@ any,a%20message%20prior%20to%20encryption."""
 
 
 import os
-from MicroRSA.exceptions import PaddingError
+from exceptions import PaddingError
 
 
 def pad_for_encryption(m: bytes, dlen: int) -> bytes:

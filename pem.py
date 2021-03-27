@@ -22,7 +22,7 @@ import pyasn1.type.namedtype as namedtype
 import pyasn1.codec.der.encoder as encoder
 import pyasn1.codec.der.decoder as decoder
 
-from MicroRSA.exceptions import KeyGenerationError, KeyReadError
+from exceptions import KeyGenerationError, KeyReadError
 
 
 class PubKeySequence(univ.Sequence):

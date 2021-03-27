@@ -1,11 +1,11 @@
 # Copyright (C) 2021 Z-40
 
-from MicroRSA.rsa import get_key_strength
-from MicroRSA.rsa import private2public
-from MicroRSA.rsa import encrypt
-from MicroRSA.rsa import decrypt
-from MicroRSA.rsa import newkeys
-from MicroRSA.rsa import verify
-from MicroRSA.rsa import sign
+from rsa import get_key_strength
+from rsa import private2public
+from rsa import encrypt
+from rsa import decrypt
+from rsa import newkeys
+from rsa import verify
+from rsa import sign
 
-from MicroRSA.prime import get_primes
+from prime import get_primes
