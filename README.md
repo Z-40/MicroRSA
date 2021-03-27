@@ -19,24 +19,24 @@ of how RSA works, please check out the [RSA wiki](https://en.wikipedia.org/wiki/
 ### Creating new keys:
 You can easily create RSA keys using the `newkeys()` function. 
 
-    >>> import MicroRSA as rsa
-    >>> rsa.newkeys(4096, "C:")
+    >>> import micro_rsa
+    >>> micro_rsa.newkeys(4096, "C:")
 
 Here, 4096 is the key strength and `"C:"` is the directory in which to save the keys.
 
 ### Encrypting/decrypting data: 
 You can encrypt data using the `encrypt()` function.
 
-    >>> import MicroRSA as rsa
+    >>> import micro_rsa
     >>> plaintext = b"THE ANSWER IS NO!"
-    >>> crypto = rsa.encrypt(plaintext, "C:")
+    >>> crypto = micro_rsa.encrypt(plaintext, "C:")
 
 To decrypt the cipher text, use the `decrypt()` function.
 
-    >>> import MicroRSA as rsa
+    >>> import micro_rsa
     >>> plaintext = b"THE ANSWER IS NO!"
-    >>> crypto = rsa.encrypt(plaintext, "C:")
-    >>> rsa.decrypt(crypto, "C:")
+    >>> crypto = micro_rsa.encrypt(plaintext, "C:")
+    >>> micro_rsa.decrypt(crypto, "C:")
     b"THE ANSWER IS NO!"
 
 `plaintext` is the data we want to encrypt and `crypto` is the cipher text (Both `plaintext` and `crypto` must be byte strings) 
@@ -45,16 +45,16 @@ and `"C:"` is the directory where the RSA keypair is stored.
 ### Signing data and verifying signatures:
 You can get the signature of the data using the `sign()` function.
 
-    >>> import MicroRSA as rsa
+    >>> import micro_rsa
     >>> data = b"Just some text I want to sign"
-    >>> singnature = rsa.sign(data, "C:")
+    >>> singnature = micro_rsa.sign(data, "C:")
 
 To verify the signature, use the `verify()` function.
 
-    >>> import MicroRSA as rsa
+    >>> import micro_rsa
     >>> data = b"Just some text I want to sign"
-    >>> signature = rsa.sign(data, "C:")
-    >>> rsa.verify(signature, data, "C:")
+    >>> signature = micro_rsa.sign(data, "C:")
+    >>> micro_rsa.verify(signature, data, "C:")
     True
 
 Here, `data` is the plain text we want to sign and `signature` is the rsa signature 
@@ -63,8 +63,8 @@ and `"C:"` is the directory that contains thr rsa keypair.
 ### Finding the strength of your RSA keys;
 The `get_key_strength()` function can be used to do this
 
-    >>> import MicroRSA as rsa
-    >>> rsa.get_key_strength("C:")
+    >>> import micro_rsa
+    >>> micro_rsa.get_key_strength("C:")
     >>> 16384
 
 Just as before, `"C:"` is the directory that contains the RSA keypair.
@@ -72,8 +72,8 @@ Just as before, `"C:"` is the directory that contains the RSA keypair.
 ### Deriving the public key from the private key
 This can done using `private2pub()` function
 
-    >>> import MicroRSA as rsa
-    >>> data = rsa.private2pub("C:", write=False)
+    >>> import micro_rsa
+    >>> data = micro_rsa.private2pub("C:", write=False)
 
 If `write` is set to `False`, the function will only return the public key data,
 however, if `write` is set to `True`, the function will return the key data and write the data 
