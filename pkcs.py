@@ -14,7 +14,6 @@
 signing and verifying messages using rsa 
 See https://en.wikipedia.org/wiki/RSA_(cryptosystem) for more info"""
 
-
 import math
 import random
 import hashlib
@@ -28,12 +27,12 @@ from micro_rsa.pem import (
 )
 
 from micro_rsa.common import (
-    byte_size, bytes2int, 
+    byte_size, bytes2int,
     modular_inv, int2bytes
 )
 
 from micro_rsa.exceptions import (
-    VerificationError, DecryptionError, 
+    VerificationError, DecryptionError,
     KeyGenerationError, KeyReadError
 )
 
@@ -45,18 +44,19 @@ from micro_rsa.blinding import (
     get_blinding_factor, blinded_operation
 )
 
-__all__ = [
-    "get_key_strength",
-    "private2public",
-    "AbstractKey",
-    "PrivateKey",
-    "PublicKey",
-    "newkeys",
-    "encrypt",
-    "decrypt",
-    "verify",
-    "sign"
-]
+
+hash_methods = {
+        "MD5": hashlib.md5,
+        "SHA-1": hashlib.sha1,
+        "SHA-224": hashlib.sha224,
+        "SHA-256": hashlib.sha256,
+        "SHA-384": hashlib.sha384,
+        "SHA-512": hashlib.sha512,
+        "SHA3-224": hashlib.sha3_224,
+        "SHA3-256": hashlib.sha3_256,
+        "SHA3-384": hashlib.sha3_384,
+        "SHA3-512": hashlib.sha3_512
+}
 
 
 class AbstractKey:
@@ -160,8 +160,9 @@ def encrypt(message, directory, file="PUBLIC_KEY.pem") -> bytes:
     :param directory: Location of the public key
     :param file: Public key file name
     :return: A byte string containing the encrypted message"""
-    # load a pem encoded public key
-    _, n, e = load_pem_pub(path=directory, file=file)
+    data = load_pem_pub(path=directory, file=file)
+    n = data["modulus"]
+    e = data["publicExponent"]
 
     # find the byte size of modulus
     nbytes = byte_size(n)
@@ -181,10 +182,17 @@ def decrypt(c, directory, blinded=True, file="PRIVATE_KEY.pem") -> bytes:
     :param blinded: Use blinding if set to ``True``, if not, use CRT
     :param file: Private key file name
     :return: A byte string containing the decrypted message"""
-    # load the pem encoded private key
-    _, n, e, d, p, q, dp, dq, qinv = load_pem_priv(directory, file)
+    data = load_pem_priv(directory, file)
+    n = data["modulus"]
+    e = data["publicExponent"]
+    d = data["privateExponent"]
+    p = data["prime1"]
+    q = data["prime2"]
+    dp = data["exponent1"]
+    dq = data["exponent2"]
+    qinv = data["coefficient"]
 
-    nbytes = byte_size(n)  
+    nbytes = byte_size(n)
     int_c = bytes2int(c)
 
     # use the Chinese Remainder Theorem if blinding is turned off
@@ -194,7 +202,7 @@ def decrypt(c, directory, blinded=True, file="PRIVATE_KEY.pem") -> bytes:
         h = (qinv * (m1 - m2)) % p
         decrypted = m2 + h * q
 
-    # decrypt using blinding if blinding is turned off
+    # decrypt using blinding if blinding is turned on
     elif blinded:
         decrypted = blinded_operation(int_c, n, e, d)
         
@@ -217,24 +225,25 @@ def decrypt(c, directory, blinded=True, file="PRIVATE_KEY.pem") -> bytes:
     
     # the \x00 separator must be present
     elif b"\x00" not in decrypted:
-        raise DecryptionError("Decryption failed because \\x00 "
+        raise DecryptionError("Decryption failed because 00 "
                               "separator not present")
     
     return decrypted[decrypted.index(b"\x00", 2) + 1:]
 
 
-def sign(m: bytes, directory: str, hash=hashlib.sha256, file="PRIVATE_KEY.pem") -> bytes:
+def sign(m: bytes, directory: str, hash_method="SHA-256", file="PRIVATE_KEY.pem") -> bytes:
     """Sign the message using the private key
     :param m: The message to be signed
     :param directory: Location of RSA private key
-    :param hash: Hashing algorithm
+    :param hash_method: Hashing algorithm
     :param file: File name of RSA private key 
     :return: The signed message"""
-    # hash the message
-    mhash = hash(m).hexdigest()
+    mhash = hash_methods[hash_method](m).hexdigest()  # hash_method the message
 
-    # read the private key
-    _, n, e, d, p, q, dp, dq, qinv = load_pem_priv(directory, file)
+    data = load_pem_priv(directory, file)
+    n = data["modulus"]
+    e = data["publicExponent"]
+    d = data["privateExponent"]
 
     # find the byte size of n
     nbytes = byte_size(n)
@@ -247,18 +256,23 @@ def sign(m: bytes, directory: str, hash=hashlib.sha256, file="PRIVATE_KEY.pem") 
     return encrypted
 
 
-def verify(s, m, directory, hash=hashlib.sha256, file="PUBLIC_KEY.pem"):
+def verify(s, m, directory, hash_method="SHA-256", file="PUBLIC_KEY.pem"):
     """Verify the signature using the public key
     :param s: The signature
     :param m: The message
     :param directory: Location of public key
-    :param hash: Hash algorithm to be used
+    :param hash_method: Hash algorithm to be used
     :param file: Name of public key
     :return: ``True`` if the signature is verified and ``False`` if otherwise"""
-    _, n, e = load_pem_pub(directory, file)  # load the pem encoded public key
+    # extract data from public key
+    data = load_pem_pub(path=directory, file=file)
+    n = data["modulus"]
+    e = data["publicExponent"]
 
-    # decrypt the message
+    # find byte size of modulus
     nbytes = byte_size(n)
+
+    # verify
     int_s = bytes2int(s)
     decrypted_s = pow(int_s, e, n)
     decrypted_s = int2bytes(decrypted_s, nbytes)
@@ -280,11 +294,12 @@ def verify(s, m, directory, hash=hashlib.sha256, file="PUBLIC_KEY.pem"):
                                 "separator not present")
     
     # we only read data after the 00 separator
-    decrypted_s = decrypted_s[decrypted_s.index(b"\x00", 2) + 1:]  
+    decrypted_s = decrypted_s[decrypted_s.index(b"\x00", 2) + 1:]
 
-    hashed_m = bytes(hash(m).hexdigest(), "ascii")  # hash the message
+    # hash_method the message
+    hashed_m = bytes(hash_methods[hash_method](m).hexdigest(), "ascii")
 
-    # compare the decrypted signature and the hash
+    # compare the decrypted signature and the hash_method
     if hashed_m == decrypted_s:
         return True
     else:
@@ -306,7 +321,7 @@ def get_key_strength(directory, keytype="public", name="PUBLIC_KEY.pem"):
     else: 
         raise KeyReadError("{} is not a valid key type".format(keytype))
 
-    return data[1].bit_length()
+    return data["modulus"].bit_length()
     
 
 def private2public(directory, write=True, pub_key_name="PUBLIC_KEY.pem", 
@@ -317,8 +332,9 @@ def private2public(directory, write=True, pub_key_name="PUBLIC_KEY.pem",
     :param pub_key_name: Write data to this file if write is turned on
     :param priv_key_name: Read data from this file
     :return: Public key data"""
-    # read the modulus and public exponent from the private key
-    _, n, e, _, _, _, _, _, _ = load_pem_priv(directory, priv_key_name)
+    data = load_pem_priv(directory, file=priv_key_name)
+    n = data["modulus"]
+    e = data["publicExponent"]
 
     # if write is set to False, return n and e
     if not write:
@@ -328,3 +344,15 @@ def private2public(directory, write=True, pub_key_name="PUBLIC_KEY.pem",
     if write:
         save_pem_pub(n, e, directory, pub_key_name)
         return n, e
+
+
+__all__ = ["get_key_strength",
+           "private2public",
+           "AbstractKey",
+           "PrivateKey",
+           "PublicKey",
+           "newkeys",
+           "encrypt",
+           "decrypt",
+           "verify",
+           "sign"]
