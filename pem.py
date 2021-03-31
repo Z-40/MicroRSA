@@ -151,7 +151,7 @@ def load_pem_pub(path, file="PUBLIC_KEY.pem") -> dict:
     # get the values from the sequence and add them to the list
     key_data = {"modulus": None, "publicExponent": None}
     for key in key_data.keys():
-        key_data[key] = decoded.getComponentByName(key)
+        key_data[key] = int(decoded.getComponentByName(key))
 
     return key_data
 
@@ -192,6 +192,6 @@ def load_pem_priv(path, file="PRIVATE_KEY.pem") -> dict:
                 "exponent2": None,
                 "coefficient": None}
     for key in key_data.keys():
-        key_data[key] = decoded.getComponentByName(key)
+        key_data[key] = int(decoded.getComponentByName(key))
 
     return key_data
