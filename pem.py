@@ -26,9 +26,21 @@ from micro_rsa.exceptions import KeyGenerationError, KeyReadError
 class PubKeySequence(univ.Sequence):
     """RSA public key structure
     RSAPrivateKey ::= SEQUENCE {
-        version           Version,
         modulus           INTEGER,  -- n
         publicExponent    INTEGER,  -- e
+    }"""
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType("modulus", univ.Integer()),
+        namedtype.NamedType("publicExponent", univ.Integer())
+    )
+
+
+class PrivKeySequence(univ.Sequence):
+    """RSA private key structure
+    RSAPublicKey ::= SEQUENCE {
+        version           Version,
+        modulus           INTEGER,  -- n
+        publicExponent    INTEGER   -- e
         privateExponent   INTEGER,  -- d
         prime1            INTEGER,  -- p
         prime2            INTEGER,  -- q
@@ -41,25 +53,12 @@ class PubKeySequence(univ.Sequence):
         namedtype.NamedType("version", univ.Integer()),
         namedtype.NamedType("modulus", univ.Integer()),
         namedtype.NamedType("publicExponent", univ.Integer()),
-    )
-
-
-class PrivKeySequence(univ.Sequence):
-    """RSA private key structure
-        RSAPublicKey ::= SEQUENCE {
-        modulus           INTEGER,  -- n
-        publicExponent    INTEGER   -- e
-    }"""
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType("version", univ.Integer()),
-        namedtype.NamedType("modulus", univ.Integer()),
-        namedtype.NamedType("publicExponent", univ.Integer()),
         namedtype.NamedType("privateExponent", univ.Integer()),
         namedtype.NamedType("prime1", univ.Integer()),
         namedtype.NamedType("prime2", univ.Integer()),
         namedtype.NamedType("exponent1", univ.Integer()),
         namedtype.NamedType("exponent2", univ.Integer()),
-        namedtype.NamedType("coefficient", univ.Integer()),
+        namedtype.NamedType("coefficient", univ.Integer())
     )
 
 
@@ -74,13 +73,12 @@ def save_pem_priv(n, e, d, p, q, dp, dq, qinv, path, file="PRIVATE_KEY.pem"):
     :param dq: exp2
     :param qinv: q inverse
     :param path: Location to save the file
-    :param file: File name"""
+    :param file: File name
+    :return: None"""
     template = "-----BEGIN RSA PRIVATE KEY-----\n{}-----END RSA PRIVATE KEY-----"
-    names = (
-        "version", "modulus", "publicExponent", 
-        "privateExponent", "prime1", "prime2", 
-        "exponent1", "exponent2", "coefficient"
-    )
+    names = ("version", "modulus", "publicExponent",
+             "privateExponent", "prime1", "prime2",
+             "exponent1", "exponent2", "coefficient")
     seq = PrivKeySequence()
     for i, x in enumerate((0, n, e, d, p, q, dp, dq, qinv)):
         seq.setComponentByName(names[i], univ.Integer(x))
@@ -103,12 +101,13 @@ def save_pem_pub(n, e, path, file="PUBLIC_KEY.pem"):
     :param n: Modulus
     :param e: Public Exponent
     :param path: Location to save the file
-    :param file: File name"""
+    :param file: File name
+    :return: None"""
     template = "-----BEGIN RSA PUBLIC KEY-----\n{}-----END RSA PUBLIC KEY-----"
-    names = ("version", "modulus", "publicExponent")
+    names = ("modulus", "publicExponent")
     seq = PubKeySequence()
 
-    for i, x in enumerate((0, n, e)):
+    for i, x in enumerate((n, e)):
         seq.setComponentByName(names[i], univ.Integer(x))
 
     # encode the sequence and insert into the template
@@ -124,12 +123,11 @@ def save_pem_pub(n, e, path, file="PUBLIC_KEY.pem"):
         raise KeyGenerationError("Could not write file to {}".format(path))
 
 
-def load_pem_pub(path, file="PUBLIC_KEY.pem"):
+def load_pem_pub(path, file="PUBLIC_KEY.pem") -> dict:
     """Load a pem encoded public key
     :param path: Location of file
-    :param file: File name"""
-    names = ("version", "modulus", "publicExponent")
-
+    :param file: File name
+    :return: A dictionary containing key data"""
     try:
         with open("{}\{}".format(path, file), "rb") as f:
             raw_data = f.read()
@@ -151,23 +149,18 @@ def load_pem_pub(path, file="PUBLIC_KEY.pem"):
         raise KeyReadError("Could not decode file")
 
     # get the values from the sequence and add them to the list
-    values = []
-    for i in range(3):
-        values.append(int(decoded.getComponentByName(names[i])))
+    key_data = {"modulus": None, "publicExponent": None}
+    for key in key_data.keys():
+        key_data[key] = decoded.getComponentByName(key)
 
-    return tuple(values)
+    return key_data
 
 
-def load_pem_priv(path, file="PRIVATE_KEY.pem"):
+def load_pem_priv(path, file="PRIVATE_KEY.pem") -> dict:
     """Load a pem encoded private key
     :param path: Location of file
-    :param file: File name"""
-    names = (
-        "version", "modulus", "publicExponent", 
-        "privateExponent", "prime1", "prime2", 
-        "exponent1", "exponent2", "coefficient"
-    )
-
+    :param file: File name
+    :return: A dictionary containing key data"""
     try:
         with open("{}\{}".format(path, file), "rb") as f:
             raw_data = f.read()
@@ -189,8 +182,16 @@ def load_pem_priv(path, file="PRIVATE_KEY.pem"):
         raise KeyReadError("Could not decode file")
 
     # get the values from the sequence and add them to the list
-    values = []
-    for i in range(9):
-        values.append(int(decoded.getComponentByName(names[i])))
+    key_data = {"version": None,
+                "modulus": None,
+                "publicExponent": None,
+                "privateExponent": None,
+                "prime1": None,
+                "prime2": None,
+                "exponent1": None,
+                "exponent2": None,
+                "coefficient": None}
+    for key in key_data.keys():
+        key_data[key] = decoded.getComponentByName(key)
 
-    return tuple(values)
+    return key_data
