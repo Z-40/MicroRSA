@@ -7,6 +7,9 @@ from micro_rsa.pem import load_pem_priv
 
 from micro_rsa.pkcs import get_key_strength
 from micro_rsa.pkcs import private2public
+from micro_rsa.pkcs import AbstractKey
+from micro_rsa.pkcs import PrivateKey
+from micro_rsa.pkcs import PublicKey
 from micro_rsa.pkcs import encrypt
 from micro_rsa.pkcs import decrypt
 from micro_rsa.pkcs import newkeys
