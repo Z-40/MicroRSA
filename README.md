@@ -13,12 +13,15 @@ To install the latest version, run this from the command line:
     pip install u-micro-rsa==2021.1
 
 ## Key generation time:
-- 512 bit: 1/4 second
-- 1024 bit: 1/2 second
-- 2048 bit: 1 seconds
-- 4096 bit: 5 seconds
-- 8192 bit: 1 minute
-- 16384 bit: 10 minutes
+- 512 bit: 1/4 second*
+- 1024 bit: 1/2 second*
+- 2048 bit: 1 seconds*
+- 4096 bit: 5 seconds*
+- 8192 bit: 1 minute*
+- 16384 bit: 10 minutes*
+
+*These are approximate values, actual key generation time
+may depend on your PC specs
 
 ## How to use:
 ### Creating new keys:
