@@ -3,6 +3,10 @@ MicroRSA is a lightweight and easy-to-use library for python which lets you use 
 MicroRSA can perform all RSA operations such as encryption, decryption, signing and signature verification and can generate keys as large as 16384 bits quickly and accurately.
 ***
 
+## How to install:
+To install the latest version, run this from the command line:
+    pip install u-micro-rsa==2021.1
+
 ## Prerequisites: 
 Before using MicroRSA in your projects, I recommend that you get a basic idea 
 of how RSA works, please check out the [RSA wiki](https://en.wikipedia.org/wiki/RSA_(cryptosystem)) to learn more.
