@@ -19,12 +19,13 @@ import random
 import hashlib
 import warnings
 
-from micro_rsa.prime import get_primes
+import base64
+import pyasn1.type.univ as univ
+import pyasn1.type.namedtype as namedtype
+import pyasn1.codec.der.decoder as decoder
+import pyasn1.codec.der.encoder as encoder
 
-from micro_rsa.pem import (
-    load_pem_priv, load_pem_pub,
-    save_pem_priv, save_pem_pub
-)
+from micro_rsa.prime import get_primes
 
 from micro_rsa.common import (
     byte_size, bytes2int,
@@ -59,86 +60,175 @@ hash_methods = {
 }
 
 
+class PubKeySequence(univ.Sequence):
+    """RSA public key structure
+    RSAPrivateKey ::= SEQUENCE {
+        modulus           INTEGER,  -- n
+        publicExponent    INTEGER,  -- e
+    }"""
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType("modulus", univ.Integer()),
+        namedtype.NamedType("publicExponent", univ.Integer())
+    )
+
+
+class PrivKeySequence(univ.Sequence):
+    """RSA private key structure
+    RSAPublicKey ::= SEQUENCE {
+        version           Version,
+        modulus           INTEGER,  -- n
+        publicExponent    INTEGER   -- e
+        privateExponent   INTEGER,  -- d
+        prime1            INTEGER,  -- p
+        prime2            INTEGER,  -- q
+        exponent1         INTEGER,  -- d mod (p-1)
+        exponent2         INTEGER,  -- d mod (q-1)
+        coefficient       INTEGER,  -- (inverse of q) mod p
+        otherPrimeInfos   OtherPrimeInfos OPTIONAL
+    }"""
+    componentType = namedtype.NamedTypes(
+        namedtype.NamedType("version", univ.Integer()),
+        namedtype.NamedType("modulus", univ.Integer()),
+        namedtype.NamedType("publicExponent", univ.Integer()),
+        namedtype.NamedType("privateExponent", univ.Integer()),
+        namedtype.NamedType("prime1", univ.Integer()),
+        namedtype.NamedType("prime2", univ.Integer()),
+        namedtype.NamedType("exponent1", univ.Integer()),
+        namedtype.NamedType("exponent2", univ.Integer()),
+        namedtype.NamedType("coefficient", univ.Integer())
+    )
+
+
 class AbstractKey:
     """Base class for RSA public and private keys
-    :param p: A large prime number
-    :param q: A large prime number"""
-    def __init__(self, p: int, q: int) -> None:
-        self.p = p
-        self.q = q
-        self.n = self.p * self.q
-        self.phi = (self.p - 1) * (self.q - 1)
+    :param n: Key modulus
+    :param e: Public exponent"""
+    def __init__(self, n: int, e: int) -> None:
+        self.n = n
+        self.e = e
 
-        # the default value for e is always set to 65537
-        self.e = 65537  
+    def save_private_key(self, directory: str, file: str):
+        """Save a pem encoded private key
+        :param directory: Location to save the file
+        :param file: filename of private key
+        :return: None"""
+        key_attributes = ("version", "modulus", "publicExponent",
+                "privateExponent", "prime1", "prime2",
+                "exponent1", "exponent2", "coefficient")
+        key_values = (
+            0, self.n, self.e, self.d, 
+            self.p, self.q, self.dp, 
+            self.dq, self.qinv
+        )
+        seq = PrivKeySequence()
+        for i, x in enumerate(key_values):
+            seq.setComponentByName(key_attributes[i], univ.Integer(x))
 
-        # if the modulus is less than 65537, e is set to 3
-        if self.n < 65537:
-            self.e = 3
+        # encode the sequence and insert into the template
+        der = encoder.encode(seq)
+        b64 = base64.encodebytes(der).decode("ascii")
+        final_data = "-----BEGIN RSA PRIVATE KEY-----\n{}-----END RSA PRIVATE KEY-----" \
+                     .format(b64)
 
-        self.d = modular_inv(self.e, self.phi)
-        self.dp = self.d % (self.p - 1)
-        self.dq = self.d % (self.q - 1)
-        self.qinv = modular_inv(self.q, self.p)
+        try:
+            with open("{}\{}".format(directory, file), "wb") as f:
+                f.write(bytes(final_data, "ascii"))
 
-    def generate(self, directory, file) -> tuple:
-        """Generates an RSA public or private key
-        :param directory: Location of file
-        :param file: File name
-        :return: key data"""
+        except PermissionError or FileExistsError:
+            raise KeyGenerationError("Could not write file to {}".format(directory))
+
+
+    def save_public_key(self, directory: str, file: str):
+        """Save a pem encoded private key
+        :param directory: Location to save the file
+        :param file: filename of the public key
+        :return: None"""
+        key_attributes = ("modulus", "publicExponent")
+
+        seq = PubKeySequence()
+        for i, x in enumerate((self.n, self.e)):
+            seq.setComponentByName(key_attributes[i], univ.Integer(x))
+
+        # encode the sequence and insert into the template
+        der = encoder.encode(seq)
+        b64 = base64.encodebytes(der).decode("ascii")
+        final_data = "-----BEGIN RSA PUBLIC KEY-----\n{}-----END RSA PUBLIC KEY-----" \
+                     .format(b64)
+
+        try:
+            with open("{}\{}".format(directory, file), "wb") as f:
+                f.write(bytes(final_data, "ascii"))
+
+        except PermissionError or FileExistsError:
+            raise KeyGenerationError("Could not write file to {}".format(directory))
 
 
 class PublicKey(AbstractKey):
     """RSA public key class
-    :param p: A large prime number
-    :param q: A large prime number"""
-    def __init__(self, p, q) -> None:
-        super().__init__(p, q)
+    :param n: Key modulus
+    :param e: Public exponent"""
+    def __init__(self, n: int, e: int) -> None:
+        super().__init__(n, e)
         
-    def generate(self, directory, file="PUBLIC_KEY.pem") -> tuple:
-        """Generates a RSA public key containing a tuple (n, e)
-        where e is the public exponent and n is the modulus.
-        :param directory: File path
-        :param file: File name
-        :return: key data"""
-        save_pem_pub(n=self.n, e=self.e, path=directory, file=file)
-        return self.n, self.e
+    def write_file(self, directory: str, file: str) -> None:
+        """Write the public key to a file
+        :param directory: location to save the file
+        :param file: filename of public key
+        :return: None"""
+        super().save_public_key(directory, file)
         
 
 class PrivateKey(AbstractKey):
-    """RSA private key class
-    :param p: A large prime number
-    :param q: A large prime number"""
-    def __init__(self, p, q) -> None:
-        super().__init__(p, q)
-
-    def generate(self, directory, file="PRIVATE_KEY.pem") -> tuple:
+    """RSA private key class"""
+    def __init__(self, n, e, d, p, q, dp, dq, qinv) -> None:
+        super().__init__(n, e)
+        self.d = d
+        self.p = p
+        self.q = q
+        self.dp = dp
+        self.dq = dq
+        self.qinv = qinv
+        
+    def write_file(self, directory: str, file: str) -> tuple:
         """Generates a RSA private key.
         :param directory: File path
         :param file: File name
         :return: key data"""
-        save_pem_priv(
-            n=self.n, e=self.e, 
-            d=self.d, p=self.p,
-            q=self.q, dp=self.dp, 
-            dq=self.dq, qinv=self.qinv,
-            path=directory, file=file
-        )
-        
-        return (
-            self.n, self.e, self.d, self.p,
-            self.q, self.dp, self.dq, self.qinv
-        )
+        super().save_private_key(directory, file)
 
 
-def newkeys(strength: int,  directory: str, pub_name="PUBLIC_KEY.pem", 
-            pri_name="PRIVATE_KEY.pem") -> tuple:
+def calculate_key_values(p: int, q: int):
+    """Calculate key values 
+    :param p: prime1
+    :param q: prime2
+    :return: Dictionary containing key data"""
+    n = p * q
+    phi = (p - 1) * (q - 1)
+
+    if n < 65537: e = 3
+    else: e = 65537
+
+    d = modular_inv(e, phi)
+    dp = d % (p - 1)
+    dq = d % (q - 1)
+    qinv = modular_inv(q, p)
+
+    return {
+        "modulus": n,
+        "publicExponent": e,
+        "privateExponent": d,
+        "prime1": p,
+        "prime2": q,
+        "exponent1": dp,
+        "exponent2": dq,
+        "coefficient": qinv
+    }
+
+
+def newkeys(strength: int) -> tuple:
     """Generates new RSA keys which have a modulus of ``strength`` bits in length
-    :param pub_name: Name of the public key
-    :param pri_name: Name of the private key
-    :param strength: key strength
-    :param directory: File location
-    :return: Private key data"""
+    :param strength: desired key strength
+    :return: RSA public and private key objects"""
     # warn the user if the strength is less than 1024 bits
     if strength < 1024:
         warnings.warn("WARNING: The key strength is too low")
@@ -147,64 +237,63 @@ def newkeys(strength: int,  directory: str, pub_name="PUBLIC_KEY.pem",
     if strength < 512:
         raise KeyGenerationError("The key strength is too low")
 
+    # calculate the key values
     p, q = get_primes(strength)
-    PublicKey(p, q).generate(directory, pub_name)
-    data = PrivateKey(p, q).generate(directory, pri_name)
+    key_values = calculate_key_values(p, q)
 
-    return data
+    # create key objects
+    public = PublicKey(key_values["modulus"], key_values["publicExponent"])
+    private = PrivateKey(
+        key_values["modulus"],
+        key_values["publicExponent"],
+        key_values["privateExponent"],
+        key_values["prime1"],
+        key_values["prime2"],
+        key_values["exponent1"],
+        key_values["exponent2"],
+        key_values["coefficient"]
+    )
+
+    return public, private
 
 
-def encrypt(message, directory, file="PUBLIC_KEY.pem") -> bytes:
+def encrypt(message: bytes, key: PublicKey) -> bytes:
     """Encrypt a byte string
     :param message: Byte string containing the plain text message
-    :param directory: Location of the public key
-    :param file: Public key file name
+    :param key: RSA public key object
     :return: A byte string containing the encrypted message"""
-    data = load_pem_pub(path=directory, file=file)
-    n = data["modulus"]
-    e = data["publicExponent"]
-
-    # find the byte size of modulus
-    nbytes = byte_size(n)
+    nbytes = byte_size(key.n)
 
     # pad and encrypt the message
     int_m = bytes2int(pad_for_encryption(message, nbytes))
-    encrypted = pow(int_m, e, n)
+    encrypted = pow(int_m, key.e, key.n)
     encrypted = int2bytes(encrypted, nbytes)
 
     return encrypted
 
 
-def decrypt(c, directory, blinded=True, file="PRIVATE_KEY.pem") -> bytes:
+def decrypt(c: bytes, key: PrivateKey, blinded=True) -> bytes:
     """Decrypt a byte string
     :param c: Byte string containing the cipher text
-    :param directory: Location of the public key
+    :param key: RSA private key object
     :param blinded: Use blinding if set to ``True``, if not, use CRT
-    :param file: Private key file name
-    :return: A byte string containing the decrypted message"""
-    data = load_pem_priv(directory, file)
-    n = data["modulus"]
-    e = data["publicExponent"]
-    d = data["privateExponent"]
-    p = data["prime1"]
-    q = data["prime2"]
-    dp = data["exponent1"]
-    dq = data["exponent2"]
-    qinv = data["coefficient"]
-
-    nbytes = byte_size(n)
+    :return: A byte string containing the decrypted message
+    
+    NOTE: The decryption will be 2x faster if blinding is turned off, 
+          but it can make it easier for attackers to use timing attacks"""
+    nbytes = byte_size(key.n)
     int_c = bytes2int(c)
 
     # use the Chinese Remainder Theorem if blinding is turned off
     if not blinded:
-        m1 = pow(int_c, dp, p)
-        m2 = pow(int_c, dq, q)
-        h = (qinv * (m1 - m2)) % p
-        decrypted = m2 + h * q
+        m1 = pow(int_c, key.dp, key.p)
+        m2 = pow(int_c, key.dq, key.q)
+        h = (key.qinv * (m1 - m2)) % key.p
+        decrypted = m2 + h * key.q
 
     # decrypt using blinding if blinding is turned on
     elif blinded:
-        decrypted = blinded_operation(int_c, n, e, d)
+        decrypted = blinded_operation(int_c, key.n, key.e, key.d)
         
     else:
         raise DecryptionError("Invalid argument {}".format(blinded))
@@ -231,50 +320,35 @@ def decrypt(c, directory, blinded=True, file="PRIVATE_KEY.pem") -> bytes:
     return decrypted[decrypted.index(b"\x00", 2) + 1:]
 
 
-def sign(m: bytes, directory: str, hash_method="SHA-256", file="PRIVATE_KEY.pem") -> bytes:
+def sign(m: bytes, key: PrivateKey, hash_method="SHA-256") -> bytes:
     """Sign the message using the private key
     :param m: The message to be signed
-    :param directory: Location of RSA private key
+    :param key: RSA private key object
     :param hash_method: Hashing algorithm
-    :param file: File name of RSA private key 
     :return: The signed message"""
-    mhash = hash_methods[hash_method](m).hexdigest()  # hash_method the message
-
-    data = load_pem_priv(directory, file)
-    n = data["modulus"]
-    e = data["publicExponent"]
-    d = data["privateExponent"]
-
-    # find the byte size of n
-    nbytes = byte_size(n)
+    mhash = hash_methods[hash_method](m).hexdigest()
+    nbytes = byte_size(key.n)
 
     # pad and encrypt the message
     int_m = bytes2int(pad_for_signing(bytes(mhash, "ascii"), nbytes))
-    encrypted = blinded_operation(int_m, n, e, d)
+    encrypted = blinded_operation(int_m, key.n, key.e, key.d)
     encrypted = int2bytes(encrypted, nbytes)
 
     return encrypted
 
 
-def verify(s, m, directory, hash_method="SHA-256", file="PUBLIC_KEY.pem"):
+def verify(m: bytes, s: bytes, key: PublicKey, hash_method="SHA-256"):
     """Verify the signature using the public key
-    :param s: The signature
     :param m: The message
-    :param directory: Location of public key
+    :param s: The signature
+    :param key: RSA public key object
     :param hash_method: Hash algorithm to be used
-    :param file: Name of public key
     :return: ``True`` if the signature is verified and ``False`` if otherwise"""
-    # extract data from public key
-    data = load_pem_pub(path=directory, file=file)
-    n = data["modulus"]
-    e = data["publicExponent"]
-
-    # find byte size of modulus
-    nbytes = byte_size(n)
+    nbytes = byte_size(key.n)
 
     # verify
     int_s = bytes2int(s)
-    decrypted_s = pow(int_s, e, n)
+    decrypted_s = pow(int_s, key.e, key.n)
     decrypted_s = int2bytes(decrypted_s, nbytes)
 
     # the \x00\x01 bytes must be present
@@ -306,53 +380,98 @@ def verify(s, m, directory, hash_method="SHA-256", file="PUBLIC_KEY.pem"):
         return False
 
 
-def get_key_strength(directory, keytype="public", name="PUBLIC_KEY.pem"):
-    """Reads a key and returns the key's strength, i.e., the bit length of the modulus
-    :param directory: The location of key
-    :param keytype: If you want to read the modulus from the public key,
-                    set this to ``"public"``, else, set this to ``"private"``
-    :param name: the name of the public or private key"""
-    if keytype == "public":
-        data = load_pem_pub(directory, name)
+def get_key_strength(key):
+    """Reads a key and returns the key's strength, 
+    i.e., the bit length of the modulus
+    :param key: RSA key object"""
+    return key.n.bit_length()
 
-    elif keytype == "private":
-        data = load_pem_priv(directory, name)
 
-    else: 
-        raise KeyReadError("{} is not a valid key type".format(keytype))
-
-    return data["modulus"].bit_length()
-    
-
-def private2public(directory, write=True, pub_key_name="PUBLIC_KEY.pem", 
-                   priv_key_name="PRIVATE_KEY.pem"):
+def private2public(key: PrivateKey):
     """Read a private key and return the public key
-    :param directory: The directory containing the private key
-    :param write: Write the data to a file if set to True, else just return n and e
-    :param pub_key_name: Write data to this file if write is turned on
-    :param priv_key_name: Read data from this file
-    :return: Public key data"""
-    data = load_pem_priv(directory, file=priv_key_name)
-    n = data["modulus"]
-    e = data["publicExponent"]
-
-    # if write is set to False, return n and e
-    if not write:
-        return n, e
-
-    # if write is set to True, write the data to a file and return n and e
-    if write:
-        save_pem_pub(n, e, directory, pub_key_name)
-        return n, e
+    :param key: RSA private key object
+    :return: RSA public key object"""
+    return PublicKey(key.n, key.e)
 
 
-__all__ = ["get_key_strength",
-           "private2public",
-           "AbstractKey",
-           "PrivateKey",
-           "PublicKey",
-           "newkeys",
-           "encrypt",
-           "decrypt",
-           "verify",
-           "sign"]
+def load_public_key(directory, file) -> PublicKey:
+    """Load a pem encoded public key
+    :param path: Location of file
+    :param file: File name
+    :return: A dictionary containing key data"""
+    try:
+        with open("{}\{}".format(directory, file), "rb") as f:
+            raw_data = f.read()
+
+    except FileNotFoundError:
+        raise KeyReadError("Could not find file at {}".format(directory))
+    
+    # remove the unwanted data
+    data1 = raw_data.replace(b"-----BEGIN RSA PUBLIC KEY-----", b"")
+    data2 = data1.replace(b"-----END RSA PUBLIC KEY-----", b"")
+    data3 = data2.replace(b"\n", b"")
+
+    # decode the base64 data
+    try:
+        der = base64.decodebytes(data3)
+        decoded = decoder.decode(der, asn1Spec=PubKeySequence())[0]
+
+    except TypeError:
+        raise KeyReadError("Could not decode file")
+
+    # get the values from the sequence and add them to the list
+    key_data = {"modulus": None, "publicExponent": None}
+    for key in key_data.keys():
+        key_data[key] = int(decoded.getComponentByName(key))
+
+    return PublicKey(key_data["modulus"], key_data["publicExponent"])
+
+
+def load_private_key(directory, file) -> PrivateKey:
+    """Load a pem encoded private key
+    :param path: Location of file
+    :param file: File name
+    :return: A dictionary containing key data"""
+    try:
+        with open("{}\{}".format(directory, file), "rb") as f:
+            raw_data = f.read()
+
+    except FileNotFoundError:
+        raise KeyReadError("Could not find file at {}".format(directory))
+
+    # remove the unwanted data
+    data1 = raw_data.replace(b"-----BEGIN RSA PRIVATE KEY-----", b"")
+    data2 = data1.replace(b"-----END RSA PRIVATE KEY-----", b"")
+    data3 = data2.replace(b"\n", b"")
+
+    # decode the base64 data
+    try:
+        der = base64.decodebytes(data3)
+        decoded = decoder.decode(der, asn1Spec=PrivKeySequence())[0]
+    
+    except TypeError:
+        raise KeyReadError("Could not decode file")
+
+    # get the values from the sequence and add them to the list
+    key_data = {"version": None,
+                "modulus": None,
+                "publicExponent": None,
+                "privateExponent": None,
+                "prime1": None,
+                "prime2": None,
+                "exponent1": None,
+                "exponent2": None,
+                "coefficient": None}
+    for key in key_data.keys():
+        key_data[key] = int(decoded.getComponentByName(key))
+
+    return PrivateKey(
+        key_data["modulus"],
+        key_data["publicExponent"],
+        key_data["privateExponent"],
+        key_data["prime1"],
+        key_data["prime2"],
+        key_data["exponent1"],
+        key_data["exponent2"],
+        key_data["coefficient"]
+    )
