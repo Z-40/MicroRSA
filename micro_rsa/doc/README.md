@@ -21,7 +21,7 @@ To install the latest version, run this from the command line:
 - 16384 bit: 10 minutes*
 
 *These are approximate values, actual key generation time
-may depend on your PC specs
+may depend on your PC specs.
 
 ## How to use:
 ### Creating new keys:
@@ -51,7 +51,7 @@ To decrypt the cipher text, use the `decrypt()` function.
     b"THE ANSWER IS NO!"
 
 `plaintext` is the data we want to encrypt and `crypto` is the cipher text (Both `plaintext` and `crypto` must be byte strings) 
-and `public` and `private` are the RSA key objects
+and `public` and `private` are the RSA key objects.
 
 ### Signing data and verifying signatures:
 You can get the signature of the data using the `sign()` function.
@@ -84,7 +84,7 @@ The `get_key_strength()` function can be used to do this
 Just as before, `public` and `private` are the RSA key objects
 
 ### Deriving the public key from the private key
-This can done using `private2pub()` function
+This can done using `private2pub()` function.
 
     >>> import micro_rsa
     >>> _, private = micro_rsa.newkeys(16384)
@@ -92,19 +92,19 @@ This can done using `private2pub()` function
 
 ### Saving the keypair
 The RSA public and private keys can be saved as files by using the 
-`write_file()` method
+`write_file()` method.
 
     >>> import micro_rsa
     >>> public, private = micro_rsa.newkeys(16384)
     >>> public.write_file("D:", "public.key")
 
 `D:` is the directory where the key is to be stored and `public.key`
-is the file name for the public key file
+is the file name for the public key file.
 
 You can save the private key in the same way.
 
 ### Loading the keypair
-The RSA public and private key files can be loaded using the `load_public_key()` function
+The RSA public and private key files can be loaded using the `load_public_key()` function.
 
     >>> import micro_rsa
     >>> public = micro_rsa.load_public_key("D:", "public.key")
@@ -112,4 +112,4 @@ The RSA public and private key files can be loaded using the `load_public_key()`
 `D:` is the directory where the key is stored and `public.key`
 is the file name for the public key file.
 
-You can also load the private key using the `load_private_key()` function
+You can also load the private key using the `load_private_key()` function.
