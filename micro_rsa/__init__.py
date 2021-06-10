@@ -16,7 +16,6 @@ from micro_rsa.pkcs import get_key_strength
 from micro_rsa.pkcs import load_private_key
 from micro_rsa.pkcs import load_public_key
 from micro_rsa.pkcs import private2public
-from micro_rsa.pkcs import AbstractKey
 from micro_rsa.pkcs import PrivateKey
 from micro_rsa.pkcs import PublicKey
 from micro_rsa.pkcs import encrypt
