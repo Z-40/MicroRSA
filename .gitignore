@@ -1,0 +1,12 @@
+# Visual Studio
+.vs
+
+# Pycharm
+.idea
+
+# Visual Studio Code
+.vscode
+
+# Pycache
+micro_rsa/__pycache__
+
