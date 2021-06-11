@@ -92,11 +92,11 @@ This can done using `private2pub()` function.
 
 ### Saving the keypair
 The RSA public and private keys can be saved as files by using the 
-`write_file()` method.
+`save_key()` method.
 
     >>> import micro_rsa
     >>> public, private = micro_rsa.newkeys(16384)
-    >>> public.write_file("D:", "public.key")
+    >>> public.save_key("D:", "public.key")
 
 `D:` is the directory where the key is to be stored and `public.key`
 is the file name for the public key file.
