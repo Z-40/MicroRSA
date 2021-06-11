@@ -10,3 +10,11 @@ and the `load_private_key()` function for the private keys
 # Version 2021.4 - released 2021-4-3.
 - Added CHANGELOG
 - Added README
+
+# Version 2021.5 - released 2021-6-11.
+- Make class `AbstractKey` a child class of `abc.ABC`
+- Classes `PrivateKey` and `PublicKey` now both have `save_key` instead of `save_public_key` and `save_private_key`
+
+I would like to thank @MorowyKomandos from the official python community on discord for the ideas
+
+

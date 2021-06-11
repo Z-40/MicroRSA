@@ -14,6 +14,7 @@
 signing and verifying messages using rsa 
 See https://en.wikipedia.org/wiki/RSA_(cryptosystem) for more info"""
 
+import abc
 import math
 import random
 import hashlib
@@ -99,7 +100,7 @@ class PrivKeySequence(univ.Sequence):
     )
 
 
-class AbstractKey:
+class AbstractKey(abc.ABC):
     """Base class for RSA public and private keys
     :param n: Key modulus
     :param e: Public exponent"""
@@ -107,14 +108,63 @@ class AbstractKey:
         self.n = n
         self.e = e
 
-    def save_private_key(self, directory: str, file: str):
+    @abc.abstractmethod
+    def save_key(self, directory: str, file: str) -> None:
+        """Save a RSA key"""
+
+
+class PublicKey(AbstractKey):
+    """RSA public key class
+    :param n: Key modulus
+    :param e: Public exponent"""
+    def __init__(self, n: int, e: int) -> None:
+        super().__init__(n, e)
+        
+    def save_key(self, directory: str, file: str) -> None:
+        """Save a pem encoded public key
+        :param directory: Location to save the file
+        :param file: filename of the public key
+        :return: None"""
+        key_attributes = ("modulus", "publicExponent")
+        seq = PubKeySequence()
+        for i, x in enumerate((self.n, self.e)):
+            seq.setComponentByName(key_attributes[i], univ.Integer(x))
+
+        # encode the sequence and insert into the template
+        der = encoder.encode(seq)
+        b64 = base64.encodebytes(der).decode("ascii")
+        final_data = "-----BEGIN RSA PUBLIC KEY-----\n{}-----END RSA PUBLIC KEY-----" \
+                     .format(b64)
+
+        try:
+            with open("{}\{}".format(directory, file), "wb") as f:
+                f.write(bytes(final_data, "ascii"))
+
+        except PermissionError or FileExistsError:
+            raise KeyGenerationError("Could not write file to {}".format(directory))
+
+
+class PrivateKey(AbstractKey):
+    """RSA private key class"""
+    def __init__(self, n, e, d, p, q, dp, dq, qinv) -> None:
+        super().__init__(n, e)
+        self.d = d
+        self.p = p
+        self.q = q
+        self.dp = dp
+        self.dq = dq
+        self.qinv = qinv
+        
+    def save_key(self, directory: str, file: str) -> None:
         """Save a pem encoded private key
         :param directory: Location to save the file
         :param file: filename of private key
         :return: None"""
-        key_attributes = ("version", "modulus", "publicExponent",
-                "privateExponent", "prime1", "prime2",
-                "exponent1", "exponent2", "coefficient")
+        key_attributes = (
+            "version", "modulus", "publicExponent",
+            "privateExponent", "prime1", "prime2",
+            "exponent1", "exponent2", "coefficient"
+        )
         key_values = (
             0, self.n, self.e, self.d, 
             self.p, self.q, self.dp, 
@@ -136,65 +186,6 @@ class AbstractKey:
 
         except PermissionError or FileExistsError:
             raise KeyGenerationError("Could not write file to {}".format(directory))
-
-
-    def save_public_key(self, directory: str, file: str):
-        """Save a pem encoded private key
-        :param directory: Location to save the file
-        :param file: filename of the public key
-        :return: None"""
-        key_attributes = ("modulus", "publicExponent")
-
-        seq = PubKeySequence()
-        for i, x in enumerate((self.n, self.e)):
-            seq.setComponentByName(key_attributes[i], univ.Integer(x))
-
-        # encode the sequence and insert into the template
-        der = encoder.encode(seq)
-        b64 = base64.encodebytes(der).decode("ascii")
-        final_data = "-----BEGIN RSA PUBLIC KEY-----\n{}-----END RSA PUBLIC KEY-----" \
-                     .format(b64)
-
-        try:
-            with open("{}\{}".format(directory, file), "wb") as f:
-                f.write(bytes(final_data, "ascii"))
-
-        except PermissionError or FileExistsError:
-            raise KeyGenerationError("Could not write file to {}".format(directory))
-
-
-class PublicKey(AbstractKey):
-    """RSA public key class
-    :param n: Key modulus
-    :param e: Public exponent"""
-    def __init__(self, n: int, e: int) -> None:
-        super().__init__(n, e)
-        
-    def write_file(self, directory: str, file: str) -> None:
-        """Write the public key to a file
-        :param directory: location to save the file
-        :param file: filename of public key
-        :return: None"""
-        super().save_public_key(directory, file)
-        
-
-class PrivateKey(AbstractKey):
-    """RSA private key class"""
-    def __init__(self, n, e, d, p, q, dp, dq, qinv) -> None:
-        super().__init__(n, e)
-        self.d = d
-        self.p = p
-        self.q = q
-        self.dp = dp
-        self.dq = dq
-        self.qinv = qinv
-        
-    def write_file(self, directory: str, file: str) -> tuple:
-        """Generates a RSA private key.
-        :param directory: File path
-        :param file: File name
-        :return: key data"""
-        super().save_private_key(directory, file)
 
 
 def calculate_key_values(p: int, q: int):
@@ -242,7 +233,10 @@ def newkeys(strength: int) -> tuple:
     key_values = calculate_key_values(p, q)
 
     # create key objects
-    public = PublicKey(key_values["modulus"], key_values["publicExponent"])
+    public = PublicKey(
+        key_values["modulus"], 
+        key_values["publicExponent"]
+    )
     private = PrivateKey(
         key_values["modulus"],
         key_values["publicExponent"],
