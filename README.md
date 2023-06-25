@@ -104,12 +104,10 @@ is the file name for the public key file.
 You can save the private key in the same way.
 
 ### Loading the keypair
-The RSA public and private key files can be loaded using the `load_public_key()` function.
+The RSA public and private key files can be loaded using the `load_public_key()` and `load_private_key()` functions.
 
     >>> import micro_rsa
     >>> public = micro_rsa.load_public_key("D:", "public.key")
 
 `D:` is the directory where the key is stored and `public.key`
 is the file name for the public key file.
-
-You can also load the private key using the `load_private_key()` function.
